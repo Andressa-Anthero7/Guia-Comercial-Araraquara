@@ -1,0 +1,6 @@
+{
+  "name": "Guia Comercial Araraquara",
+  "description": "O guia comercial mais completo e interativo de Araraquara. Encontre comércios, serviços, cupons de desconto, eventos e contatos úteis da cidade.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
