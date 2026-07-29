@@ -155,6 +155,31 @@ class FinanceApiTests(TestCase):
         self.assertEqual(read_response.status_code, 200)
         self.assertTrue(notification.read_by.filter(pk=self.user.pk).exists())
 
+    def test_backoffice_business_accepts_space_separated_hashtags(self):
+        response = self.client.post(
+            "/api/backoffice/businesses/",
+            {
+                "name": "Sorveteria Teste",
+                "description": "Cadastro com hashtags comerciais.",
+                "street": "Rua Teste",
+                "number": "20",
+                "neighborhood": "Centro",
+                "city": "Araraquara",
+                "state": "SP",
+                "phone_whatsapp": "16999999999",
+                "email": "sorveteria@example.com",
+                "tags": ["#SorveteAraraquara #SobremesaPerfeita #VemPraLoja"],
+                "status": "pending",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(
+            set(Business.objects.get(pk=response.data["id"]).tags.values_list("name", flat=True)),
+            {"SorveteAraraquara", "SobremesaPerfeita", "VemPraLoja"},
+        )
+
     def test_staff_user_can_register_push_subscription(self):
         response = self.client.post(
             "/api/backoffice/push/subscription/",

@@ -6,6 +6,7 @@ import {
 } from "../api";
 import { CATEGORIES, NEIGHBORHOODS } from "../data";
 import { Business } from "../types";
+import { optimizeImageFile, parseTags } from "../utils/content";
 
 interface Props {
   onCancel: () => void;
@@ -17,26 +18,6 @@ interface Props {
 
 const now = () => new Date().toISOString().slice(0, 10);
 const inputClass = "h-10 rounded-lg border border-stone-200 bg-white px-3 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100";
-
-async function optimizeImage(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const image = new Image();
-    const url = URL.createObjectURL(file);
-    image.onload = () => {
-      URL.revokeObjectURL(url);
-      const scale = Math.min(1, 1600 / Math.max(image.naturalWidth, image.naturalHeight));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
-      canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
-      const context = canvas.getContext("2d");
-      if (!context) return reject(new Error("Nao foi possivel processar a imagem."));
-      context.drawImage(image, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL("image/webp", 0.8));
-    };
-    image.onerror = () => reject(new Error("Imagem invalida."));
-    image.src = url;
-  });
-}
 
 export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId = 0, existingBusiness = null, existingAdvertisement = null }: Props) {
   const [step, setStep] = useState(
@@ -96,9 +77,10 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
   };
 
   const addPhotos = async (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []).slice(0, 10 - ad.photos.length);
+    const files = Array.from<File>(event.target.files ?? []).slice(0, 10 - ad.photos.length);
     try {
-      const photos = await Promise.all(files.map(optimizeImage));
+      const photos: string[] = [];
+      for (const file of files) photos.push(await optimizeImageFile(file));
       setAd(current => ({
         ...current,
         photos: [...current.photos, ...photos].slice(0, 10),
@@ -144,7 +126,7 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
         isFeatured: ad.featured,
         status: ad.status === "published" ? "active" : "pending",
         hours: establishment.hours,
-        tags: ad.tags.split(",").map(tag => tag.trim()).filter(Boolean)
+        tags: parseTags(ad.tags)
       });
 
       if (!owner.businesses.includes(Number(business.id))) {
@@ -166,7 +148,7 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
         logo_image: ad.logoImage,
         cover_image: ad.coverImage,
         video_url: ad.videoUrl,
-        tags: ad.tags.split(",").map(tag => tag.trim()).filter(Boolean),
+        tags: parseTags(ad.tags),
         tag_names: [],
         media: ad.photos.map((photo, index) => ({
           media_type: "image", file_data: photo, alt_text: business.name, caption: "", order: index

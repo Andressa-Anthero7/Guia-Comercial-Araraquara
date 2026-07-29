@@ -1,3 +1,5 @@
+import re
+
 from rest_framework import serializers
 
 from .models import (
@@ -18,6 +20,15 @@ from .models import (
     Tag,
     UsefulNumber,
 )
+
+def normalize_tag_names(values):
+    normalized = []
+    for value in values:
+        for name in re.split(r"[\s,;#]+", value):
+            clean_name = name.strip()
+            if clean_name and clean_name not in normalized:
+                normalized.append(clean_name[:80])
+    return normalized
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -47,7 +58,7 @@ class BusinessSerializer(serializers.ModelSerializer):
     )
     category_name = serializers.CharField(source="category.name", read_only=True)
     tags = serializers.ListField(
-        child=serializers.CharField(max_length=80),
+        child=serializers.CharField(),
         required=False,
         write_only=True,
     )
@@ -105,6 +116,9 @@ class BusinessSerializer(serializers.ModelSerializer):
         business.tags.set(tags)
         return business
 
+    def validate_tags(self, value):
+        return normalize_tag_names(value)
+
     def get_tag_names(self, obj):
         return [tag.name for tag in obj.tags.all()]
 
@@ -118,7 +132,7 @@ class BackofficeBusinessSerializer(serializers.ModelSerializer):
     )
     category_name = serializers.CharField(source="category.name", read_only=True)
     tags = serializers.ListField(
-        child=serializers.CharField(max_length=80),
+        child=serializers.CharField(),
         required=False,
         write_only=True,
     )
@@ -174,6 +188,9 @@ class BackofficeBusinessSerializer(serializers.ModelSerializer):
 
     def get_tag_names(self, obj):
         return [tag.name for tag in obj.tags.all()]
+
+    def validate_tags(self, value):
+        return normalize_tag_names(value)
 
     def create(self, validated_data):
         tag_names = validated_data.pop("tags", [])

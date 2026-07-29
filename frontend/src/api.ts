@@ -209,15 +209,17 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
       throw new Error("As imagens ultrapassaram o tamanho permitido pelo servidor.");
     }
 
-    const detail =
-      typeof error.detail === "string"
-        ? error.detail
-        : Object.entries(error)
-            .map(([field, messages]) => {
-              const text = Array.isArray(messages) ? messages.join(", ") : String(messages);
-              return `${field}: ${text}`;
-            })
-            .join("\n");
+    const formatError = (value: unknown): string => {
+      if (typeof value === "string") return value;
+      if (Array.isArray(value)) return value.map(formatError).filter(Boolean).join(", ");
+      if (value && typeof value === "object") {
+        return Object.entries(value)
+          .map(([field, messages]) => `${field}: ${formatError(messages)}`)
+          .join("; ");
+      }
+      return String(value ?? "");
+    };
+    const detail = formatError(error);
 
     throw new Error(
       detail ||

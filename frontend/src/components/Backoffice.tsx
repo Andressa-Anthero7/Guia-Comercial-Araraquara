@@ -26,6 +26,7 @@ import { AdvertiserOnboarding } from "./AdvertiserOnboarding";
 import { CommercialManagement } from "./CommercialManagement";
 import { BACKOFFICE_VERSION } from "../version";
 import { NotificationCenter } from "./NotificationCenter";
+import { parseTags } from "../utils/content";
 
 interface BackofficeProps {
   businesses: Business[];
@@ -420,10 +421,7 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onBus
 
     const existingBusiness = businesses.find((business) => business.id === form.id);
     const cleanWhatsapp = form.phoneWhatsapp.replace(/[^0-9]/g, "");
-    const tags = form.tags
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean);
+    const tags = parseTags(form.tags);
     const galleryImages = form.images.slice(0, MAX_GALLERY_IMAGES);
     const coverImage = galleryImages[0] || form.image.trim() || DEFAULT_IMAGE;
 
