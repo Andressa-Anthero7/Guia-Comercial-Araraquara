@@ -10,8 +10,10 @@ from .models import (
     AdvertisingPlan,
     AdvertisingSubscription,
     Advertisement,
+    BackofficeNotification,
     Business,
     Invoice,
+    PushSubscription,
 )
 
 
@@ -135,4 +137,36 @@ class FinanceApiTests(TestCase):
         self.assertEqual(
             set(self.business.tags.values_list("name", flat=True)),
             {"Servico local", "Araraquara"},
+        )
+
+    def test_pending_business_creates_backoffice_notification(self):
+        notification = BackofficeNotification.objects.get(
+            unique_key=f"business-pending-{self.business.pk}"
+        )
+        self.assertEqual(notification.kind, BackofficeNotification.Kind.REGISTRATION)
+
+        response = self.client.get("/api/backoffice/notifications/")
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.data[0]["is_read"])
+
+        read_response = self.client.post(
+            f"/api/backoffice/notifications/{notification.pk}/read/"
+        )
+        self.assertEqual(read_response.status_code, 200)
+        self.assertTrue(notification.read_by.filter(pk=self.user.pk).exists())
+
+    def test_staff_user_can_register_push_subscription(self):
+        response = self.client.post(
+            "/api/backoffice/push/subscription/",
+            {
+                "endpoint": "https://push.example.com/subscription/123",
+                "p256dh": "public-client-key",
+                "auth": "authentication-secret",
+                "user_agent": "Test Browser",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertTrue(
+            PushSubscription.objects.filter(user=self.user, is_active=True).exists()
         )

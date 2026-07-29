@@ -7,11 +7,13 @@ from .models import (
     Advertisement,
     AdvertisementMedia,
     Business,
+    BackofficeNotification,
     BusinessImage,
     Category,
     Coupon,
     Event,
     Invoice,
+    PushSubscription,
     Review,
     Tag,
     UsefulNumber,
@@ -267,3 +269,19 @@ class AdvertisementAdmin(admin.ModelAdmin):
     autocomplete_fields = ("business",)
     filter_horizontal = ("tags",)
     inlines = (AdvertisementMediaInline,)
+
+
+@admin.register(BackofficeNotification)
+class BackofficeNotificationAdmin(admin.ModelAdmin):
+    list_display = ("title", "kind", "recipient", "created_at")
+    list_filter = ("kind", "created_at")
+    search_fields = ("title", "message", "unique_key")
+    readonly_fields = ("created_at",)
+
+
+@admin.register(PushSubscription)
+class PushSubscriptionAdmin(admin.ModelAdmin):
+    list_display = ("user", "is_active", "updated_at")
+    list_filter = ("is_active",)
+    search_fields = ("user__username", "endpoint", "user_agent")
+    readonly_fields = ("endpoint", "p256dh", "auth", "created_at", "updated_at")

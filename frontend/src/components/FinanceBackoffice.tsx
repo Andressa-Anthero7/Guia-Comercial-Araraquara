@@ -75,7 +75,16 @@ export function FinanceBackoffice({ businesses }: { businesses: Business[] }) {
     }
   };
 
-  useEffect(() => { void reload(); }, []);
+  useEffect(() => {
+    void reload();
+    const timer = window.setInterval(() => void reload(), 30000);
+    const focus = () => void reload();
+    window.addEventListener("focus", focus);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", focus);
+    };
+  }, []);
 
   const overdueInvoices = useMemo(
     () => invoices.filter((item) => item.status === "overdue" || (item.status === "open" && item.due_date < today())),

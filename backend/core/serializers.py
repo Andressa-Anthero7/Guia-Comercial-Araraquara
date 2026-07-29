@@ -8,10 +8,12 @@ from .models import (
     AdvertisementMedia,
     Business,
     BusinessImage,
+    BackofficeNotification,
     Category,
     Coupon,
     Event,
     Invoice,
+    PushSubscription,
     Review,
     Tag,
     UsefulNumber,
@@ -477,3 +479,31 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "created_at", "updated_at",
         )
         read_only_fields = ("created_at", "updated_at")
+
+
+class BackofficeNotificationSerializer(serializers.ModelSerializer):
+    is_read = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BackofficeNotification
+        fields = (
+            "id", "kind", "title", "message", "url", "is_read", "created_at"
+        )
+
+    def get_is_read(self, obj):
+        user = self.context["request"].user
+        return obj.read_by.filter(pk=user.pk).exists()
+
+
+class PushSubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PushSubscription
+        fields = ("endpoint", "p256dh", "auth", "user_agent")
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        subscription, _ = PushSubscription.objects.update_or_create(
+            endpoint=validated_data["endpoint"],
+            defaults={**validated_data, "user": user, "is_active": True},
+        )
+        return subscription

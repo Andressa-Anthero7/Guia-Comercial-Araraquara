@@ -408,6 +408,56 @@ class Invoice(models.Model):
         return f"{self.subscription} - {self.due_date}"
 
 
+class BackofficeNotification(models.Model):
+    class Kind(models.TextChoices):
+        REGISTRATION = "registration", "Novo cadastro"
+        ADVERTISEMENT = "advertisement", "Anuncio"
+        REVIEW = "review", "Avaliacao"
+        FINANCE = "finance", "Financeiro"
+        SYSTEM = "system", "Sistema"
+
+    kind = models.CharField(max_length=24, choices=Kind.choices, default=Kind.SYSTEM)
+    title = models.CharField(max_length=160)
+    message = models.CharField(max_length=320)
+    url = models.CharField(max_length=240, default="/backoffice", blank=True)
+    unique_key = models.CharField(max_length=180, unique=True)
+    recipient = models.ForeignKey(
+        get_user_model(),
+        related_name="backoffice_notifications",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    read_by = models.ManyToManyField(
+        get_user_model(),
+        related_name="read_backoffice_notifications",
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+        verbose_name = "notificacao do backoffice"
+        verbose_name_plural = "notificacoes do backoffice"
+
+
+class PushSubscription(models.Model):
+    user = models.ForeignKey(
+        get_user_model(), related_name="push_subscriptions", on_delete=models.CASCADE
+    )
+    endpoint = models.TextField(unique=True)
+    p256dh = models.TextField()
+    auth = models.TextField()
+    user_agent = models.CharField(max_length=320, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "inscricao push"
+        verbose_name_plural = "inscricoes push"
+
+
 class Review(models.Model):
     business = models.ForeignKey(
         Business,

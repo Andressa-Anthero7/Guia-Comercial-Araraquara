@@ -1,10 +1,11 @@
 from django.contrib.auth import authenticate, login, logout
 from datetime import timedelta
+import os
 from django.db.models import Q, Sum
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import mixins, status, viewsets
-from rest_framework.decorators import api_view
+from rest_framework.decorators import action, api_view
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 
@@ -14,10 +15,12 @@ from .models import (
     AdvertisingSubscription,
     Advertisement,
     Business,
+    BackofficeNotification,
     Category,
     Coupon,
     Event,
     Invoice,
+    PushSubscription,
     Review,
     UsefulNumber,
 )
@@ -37,6 +40,8 @@ from .serializers import (
     AdvertisingSubscriptionSerializer,
     AdvertisementSerializer,
     InvoiceSerializer,
+    BackofficeNotificationSerializer,
+    PushSubscriptionSerializer,
 )
 
 
@@ -106,6 +111,19 @@ def finance_summary(request):
         paid_at__year=today.year,
         paid_at__month=today.month,
     )
+    for invoice in overdue[:25]:
+        BackofficeNotification.objects.get_or_create(
+            unique_key=f"invoice-overdue-{invoice.pk}-{invoice.due_date}",
+            defaults={
+                "kind": BackofficeNotification.Kind.FINANCE,
+                "title": "Cobranca vencida",
+                "message": (
+                    f"{invoice.subscription.advertiser.name} possui uma cobranca "
+                    f"vencida em {invoice.due_date:%d/%m/%Y}."
+                ),
+                "url": "/backoffice/financeiro",
+            },
+        )
 
     def total(queryset):
         values = queryset.aggregate(
@@ -394,3 +412,48 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
         if business:
             queryset = queryset.filter(business_id=business)
         return queryset
+
+
+class BackofficeNotificationViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = BackofficeNotificationSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        return BackofficeNotification.objects.filter(
+            Q(recipient__isnull=True) | Q(recipient=self.request.user)
+        ).prefetch_related("read_by")
+
+    @action(detail=True, methods=["post"], url_path="read")
+    def mark_read(self, request, pk=None):
+        notification = self.get_object()
+        notification.read_by.add(request.user)
+        return Response({"status": "read"})
+
+    @action(detail=False, methods=["post"], url_path="read-all")
+    def mark_all_read(self, request):
+        for notification in self.get_queryset():
+            notification.read_by.add(request.user)
+        return Response({"status": "all-read"})
+
+
+@api_view(["GET"])
+def push_config(request):
+    if not request.user.is_staff:
+        return Response({"detail": "Acesso nao autorizado."}, status=status.HTTP_403_FORBIDDEN)
+    return Response({"public_key": os.environ.get("WEBPUSH_VAPID_PUBLIC_KEY", "")})
+
+
+@api_view(["POST", "DELETE"])
+def push_subscription(request):
+    if not request.user.is_staff:
+        return Response({"detail": "Acesso nao autorizado."}, status=status.HTTP_403_FORBIDDEN)
+    if request.method == "DELETE":
+        endpoint = request.data.get("endpoint", "")
+        PushSubscription.objects.filter(user=request.user, endpoint=endpoint).update(
+            is_active=False
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    serializer = PushSubscriptionSerializer(data=request.data, context={"request": request})
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data, status=status.HTTP_201_CREATED)

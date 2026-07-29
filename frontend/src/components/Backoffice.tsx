@@ -25,6 +25,7 @@ import { FinanceBackoffice } from "./FinanceBackoffice";
 import { AdvertiserOnboarding } from "./AdvertiserOnboarding";
 import { CommercialManagement } from "./CommercialManagement";
 import { BACKOFFICE_VERSION } from "../version";
+import { NotificationCenter } from "./NotificationCenter";
 
 interface BackofficeProps {
   businesses: Business[];
@@ -493,6 +494,7 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onBus
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <NotificationCenter />
             <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
               <UserCircle className="h-5 w-5 text-amber-500" />
               <div className="leading-tight">

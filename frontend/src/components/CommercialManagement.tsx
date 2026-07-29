@@ -56,7 +56,16 @@ export function CommercialManagement({
     }
   };
 
-  useEffect(() => { void reload(); }, []);
+  useEffect(() => {
+    void reload();
+    const timer = window.setInterval(() => void reload(), 30000);
+    const focus = () => void reload();
+    window.addEventListener("focus", focus);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", focus);
+    };
+  }, []);
 
   const ownerFor = (businessId: string | number) =>
     advertisers.find(item => item.businesses.includes(Number(businessId)));

@@ -155,6 +155,16 @@ export interface FinanceSummary {
   received_this_month: number;
 }
 
+export interface BackofficeNotification {
+  id: number;
+  kind: "registration" | "advertisement" | "review" | "finance" | "system";
+  title: string;
+  message: string;
+  url: string;
+  is_read: boolean;
+  created_at: string;
+}
+
 function csrfToken() {
   const cookie = document.cookie
     .split("; ")
@@ -442,4 +452,42 @@ export const saveAdvertisement = (value: Advertisement) =>
 
 export async function loadAdvertisements() {
   return request<Advertisement[]>("/api/backoffice/advertisements/");
+}
+
+export async function loadBackofficeNotifications() {
+  return request<BackofficeNotification[]>("/api/backoffice/notifications/");
+}
+
+export async function markNotificationRead(id: number) {
+  await ensureCsrf();
+  return request<{ status: string }>(`/api/backoffice/notifications/${id}/read/`, {
+    method: "POST",
+    body: "{}"
+  });
+}
+
+export async function markAllNotificationsRead() {
+  await ensureCsrf();
+  return request<{ status: string }>("/api/backoffice/notifications/read-all/", {
+    method: "POST",
+    body: "{}"
+  });
+}
+
+export async function getPushConfig() {
+  return request<{ public_key: string }>("/api/backoffice/push/config/");
+}
+
+export async function savePushSubscription(subscription: PushSubscriptionJSON) {
+  const key = (name: "p256dh" | "auth") => subscription.keys?.[name] ?? "";
+  await ensureCsrf();
+  return request("/api/backoffice/push/subscription/", {
+    method: "POST",
+    body: JSON.stringify({
+      endpoint: subscription.endpoint,
+      p256dh: key("p256dh"),
+      auth: key("auth"),
+      user_agent: navigator.userAgent
+    })
+  });
 }

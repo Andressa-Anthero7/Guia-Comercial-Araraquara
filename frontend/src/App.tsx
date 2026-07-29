@@ -116,9 +116,18 @@ export default function App() {
 
   useEffect(() => {
     if (!isBackofficeAuthenticated || !currentPath.startsWith("/backoffice")) return;
-    loadBackofficeBusinesses()
-      .then(setBusinesses)
-      .catch((error) => console.error("Nao foi possivel carregar o backoffice.", error));
+    const reload = () => {
+      loadBackofficeBusinesses()
+        .then(setBusinesses)
+        .catch((error) => console.error("Nao foi possivel carregar o backoffice.", error));
+    };
+    reload();
+    const timer = window.setInterval(reload, 30000);
+    window.addEventListener("focus", reload);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", reload);
+    };
   }, [isBackofficeAuthenticated, currentPath]);
 
   const navigateTo = (path: string) => {

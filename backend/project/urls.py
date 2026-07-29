@@ -22,7 +22,18 @@ def backoffice_asset(request, asset_path):
     content_type, _ = mimetypes.guess_type(file_path.name)
     return FileResponse(file_path.open("rb"), content_type=content_type)
 
+
+def service_worker(request):
+    file_path = Path(settings.BACKOFFICE_DIST_ROOT) / "sw.js"
+    if not file_path.is_file():
+        raise Http404("Service worker ainda nao foi publicado.")
+    response = FileResponse(file_path.open("rb"), content_type="text/javascript")
+    response["Service-Worker-Allowed"] = "/"
+    response["Cache-Control"] = "no-cache"
+    return response
+
 urlpatterns = [
+    path("sw.js", service_worker),
     re_path(r"^assets/(?P<asset_path>.+)$", backoffice_asset),
     re_path(r"^backoffice(?:/.*)?$", backoffice_index),
     path("admin/", admin.site.urls),

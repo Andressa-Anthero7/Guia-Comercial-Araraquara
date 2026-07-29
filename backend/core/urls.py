@@ -23,6 +23,9 @@ from .views import (
     AdvertisingSubscriptionViewSet,
     InvoiceViewSet,
     AdvertisementViewSet,
+    BackofficeNotificationViewSet,
+    push_config,
+    push_subscription,
 )
 
 router = DefaultRouter()
@@ -41,6 +44,7 @@ router.register("backoffice/plans", AdvertisingPlanViewSet, basename="backoffice
 router.register("backoffice/subscriptions", AdvertisingSubscriptionViewSet, basename="backoffice-subscription")
 router.register("backoffice/invoices", InvoiceViewSet, basename="backoffice-invoice")
 router.register("backoffice/advertisements", AdvertisementViewSet, basename="backoffice-advertisement")
+router.register("backoffice/notifications", BackofficeNotificationViewSet, basename="backoffice-notification")
 
 urlpatterns = [
     path("health/", health_check, name="health-check"),
@@ -49,5 +53,7 @@ urlpatterns = [
     path("auth/logout/", backoffice_logout, name="backoffice-logout"),
     path("auth/session/", backoffice_session, name="backoffice-session"),
     path("backoffice/finance-summary/", finance_summary, name="finance-summary"),
+    path("backoffice/push/config/", push_config, name="push-config"),
+    path("backoffice/push/subscription/", push_subscription, name="push-subscription"),
     path("", include(router.urls)),
 ]
