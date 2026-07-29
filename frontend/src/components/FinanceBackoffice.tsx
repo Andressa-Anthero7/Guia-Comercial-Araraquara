@@ -1,6 +1,6 @@
 import { ChangeEvent, FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import {
-  AlertTriangle, BadgeDollarSign, Building2, CalendarClock, CheckCircle2,
+  AlertTriangle, BadgeDollarSign, CalendarClock, CheckCircle2,
   CreditCard, PlusCircle, RefreshCw, Users
 } from "lucide-react";
 import { Business } from "../types";
@@ -15,6 +15,14 @@ const today = () => new Date().toISOString().slice(0, 10);
 const monthStart = () => `${today().slice(0, 7)}-01`;
 const money = (value: string | number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value || 0));
+const dateLabel = (value: string) =>
+  value ? new Intl.DateTimeFormat("pt-BR").format(new Date(`${value}T12:00:00`)) : "—";
+const statusLabels: Record<string, string> = {
+  active: "Ativo", inactive: "Inativo", prospect: "Prospect", pending: "Pendente",
+  suspended: "Suspensa", cancelled: "Cancelada", expired: "Vencida",
+  open: "Em aberto", paid: "Paga", overdue: "Vencida",
+  monthly: "Mensal", quarterly: "Trimestral", semiannual: "Semestral", annual: "Anual"
+};
 
 const emptySummary: FinanceSummary = {
   active_advertisers: 0, active_subscriptions: 0, open_amount: 0,
@@ -110,35 +118,36 @@ export function FinanceBackoffice({ businesses }: { businesses: Business[] }) {
     }
   };
 
-  const field = "h-10 rounded-lg border border-stone-200 bg-white px-3 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100";
+  const field = "h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-100";
   const cards = [
-    { label: "Recebido no mes", value: money(summary.received_this_month), icon: CheckCircle2, tone: "text-emerald-600" },
-    { label: "Em aberto", value: money(summary.open_amount), icon: CreditCard, tone: "text-blue-600" },
-    { label: "Em atraso", value: money(summary.overdue_amount), icon: AlertTriangle, tone: "text-rose-600" },
-    { label: "Assinaturas ativas", value: summary.active_subscriptions, icon: BadgeDollarSign, tone: "text-amber-600" }
+    { label: "Receita recebida no mês", value: money(summary.received_this_month), icon: CheckCircle2 },
+    { label: "Contas a receber", value: money(summary.open_amount), icon: CreditCard },
+    { label: "Saldo vencido", value: money(summary.overdue_amount), icon: AlertTriangle },
+    { label: "Contratos ativos", value: summary.active_subscriptions, icon: BadgeDollarSign }
   ];
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-3 rounded-lg border border-stone-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-4 text-slate-800">
+      <div className="flex flex-col gap-3 border-b border-slate-300 pb-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-xl font-extrabold text-stone-950">Controle financeiro</h2>
-          <p className="text-sm text-stone-500">Anunciantes, planos, contratos, vencimentos e recebimentos.</p>
+          <div className="mb-1 text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Administrativo</div>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-950">Gestão financeira</h2>
+          <p className="mt-1 text-sm text-slate-500">Contratos comerciais, faturamento, vencimentos e recebimentos.</p>
         </div>
-        <button onClick={() => void reload()} className="inline-flex items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 text-sm font-bold">
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Atualizar
+        <button onClick={() => void reload()} className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Atualizar dados
         </button>
       </div>
 
       {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-700">{error}</div>}
 
-      <div className="flex gap-2 overflow-x-auto rounded-lg border border-stone-200 bg-white p-2">
+      <div className="flex gap-1 overflow-x-auto border-b border-slate-300">
         {([
-          ["overview", "Visao geral"], ["advertisers", "Anunciantes"], ["plans", "Planos"],
-          ["subscriptions", "Assinaturas"], ["invoices", "Cobrancas"]
+          ["overview", "Visão geral"], ["advertisers", "Anunciantes"], ["plans", "Planos"],
+          ["subscriptions", "Contratos"], ["invoices", "Cobranças"]
         ] as Array<[Tab, string]>).map(([value, label]) => (
           <button key={value} onClick={() => setTab(value)}
-            className={`whitespace-nowrap rounded-md px-3 py-2 text-sm font-bold ${tab === value ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-50"}`}>
+            className={`whitespace-nowrap border-b-2 px-4 py-3 text-sm font-semibold ${tab === value ? "border-slate-900 text-slate-950" : "border-transparent text-slate-500 hover:text-slate-800"}`}>
             {label}
           </button>
         ))}
@@ -147,12 +156,12 @@ export function FinanceBackoffice({ businesses }: { businesses: Business[] }) {
       {tab === "overview" && (
         <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {cards.map(({ label, value, icon: Icon, tone }) => (
-              <div key={label} className="rounded-lg border border-stone-200 bg-white p-4">
-                <div className="flex items-center justify-between text-sm font-semibold text-stone-500">
-                  {label}<Icon className={`h-5 w-5 ${tone}`} />
+            {cards.map(({ label, value, icon: Icon }) => (
+              <div key={label} className="border border-slate-300 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wide text-slate-500">
+                  {label}<Icon className="h-4 w-4 text-slate-400" />
                 </div>
-                <div className="mt-2 text-2xl font-extrabold text-stone-950">{value}</div>
+                <div className="mt-3 text-2xl font-bold tabular-nums text-slate-950">{value}</div>
               </div>
             ))}
           </div>
@@ -199,7 +208,7 @@ export function FinanceBackoffice({ businesses }: { businesses: Business[] }) {
             </form>
           }>
           <DataTable headers={["Anunciante","Contato","Anuncios","Status"]}>
-            {advertisers.map(item => <tr key={item.id} className="border-t text-sm"><td className="p-3 font-bold">{item.name}<div className="text-xs font-normal text-stone-500">{item.document}</div></td><td className="p-3">{item.contact_name}<div className="text-xs text-stone-500">{item.phone}</div></td><td className="p-3">{item.business_names.join(", ") || "Nenhum"}</td><td className="p-3">{item.status}</td></tr>)}
+            {advertisers.map(item => <tr key={item.id} className="text-sm hover:bg-slate-50"><td className="px-4 py-3 font-semibold text-slate-900">{item.name}<div className="text-xs font-normal text-slate-500">{item.document || "Documento não informado"}</div></td><td className="px-4 py-3">{item.contact_name}<div className="text-xs text-slate-500">{item.phone}</div></td><td className="px-4 py-3">{item.business_names.join(", ") || "Nenhum"}</td><td className="px-4 py-3"><StatusBadge status={item.status}/></td></tr>)}
           </DataTable>
         </CrudSection>
       )}
@@ -215,7 +224,7 @@ export function FinanceBackoffice({ businesses }: { businesses: Business[] }) {
             <label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" checked={planForm.featured} onChange={e=>setPlanForm({...planForm,featured:e.target.checked})}/>Inclui destaque no portal</label>
             <button className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-bold text-white">Salvar plano</button>
           </form>}>
-          <DataTable headers={["Plano","Ciclo","Valor","Anuncios","Destaque"]}>{plans.map(item=><tr key={item.id} className="border-t text-sm"><td className="p-3 font-bold">{item.name}</td><td className="p-3">{item.billing_cycle}</td><td className="p-3">{money(item.price)}</td><td className="p-3">{item.max_ads}</td><td className="p-3">{item.featured?"Sim":"Nao"}</td></tr>)}</DataTable>
+          <DataTable headers={["Plano","Ciclo","Valor","Anúncios","Destaque"]}>{plans.map(item=><tr key={item.id} className="text-sm hover:bg-slate-50"><td className="px-4 py-3 font-semibold text-slate-900">{item.name}</td><td className="px-4 py-3">{statusLabels[item.billing_cycle] || item.billing_cycle}</td><td className="px-4 py-3 font-semibold tabular-nums">{money(item.price)}</td><td className="px-4 py-3">{item.max_ads}</td><td className="px-4 py-3">{item.featured?"Sim":"Não"}</td></tr>)}</DataTable>
         </CrudSection>
       )}
 
@@ -230,7 +239,7 @@ export function FinanceBackoffice({ businesses }: { businesses: Business[] }) {
             <label className="text-xs font-bold text-stone-500">Valor contratado<input required type="number" step="0.01" className={`${field} mt-1 w-full`} value={subscriptionForm.agreed_price} onChange={e=>setSubscriptionForm({...subscriptionForm,agreed_price:e.target.value})}/></label>
             <button className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-bold text-white">Salvar assinatura</button>
           </form>}>
-          <DataTable headers={["Anunciante","Anuncio","Plano","Valor","Vencimento","Status"]}>{subscriptions.map(item=><tr key={item.id} className="border-t text-sm"><td className="p-3 font-bold">{item.advertiser_name}</td><td className="p-3">{item.business_name}</td><td className="p-3">{item.plan_name}</td><td className="p-3">{money(item.agreed_price)}</td><td className="p-3">{item.next_due_date}</td><td className="p-3">{item.status}</td></tr>)}</DataTable>
+          <DataTable headers={["Anunciante","Anúncio","Plano","Valor contratado","Próximo vencimento","Status"]}>{subscriptions.map(item=><tr key={item.id} className="text-sm hover:bg-slate-50"><td className="px-4 py-3 font-semibold text-slate-900">{item.advertiser_name}</td><td className="px-4 py-3">{item.business_name}</td><td className="px-4 py-3">{item.plan_name}</td><td className="px-4 py-3 font-semibold tabular-nums">{money(item.agreed_price)}</td><td className="px-4 py-3 tabular-nums">{dateLabel(item.next_due_date)}</td><td className="px-4 py-3"><StatusBadge status={item.status}/></td></tr>)}</DataTable>
         </CrudSection>
       )}
 
@@ -248,7 +257,7 @@ export function FinanceBackoffice({ businesses }: { businesses: Business[] }) {
             <select className={field} value={invoiceForm.payment_method} onChange={e=>setInvoiceForm({...invoiceForm,payment_method:e.target.value})}><option value="">Forma de pagamento</option><option value="pix">PIX</option><option value="boleto">Boleto</option><option value="card">Cartao</option><option value="transfer">Transferencia</option><option value="cash">Dinheiro</option><option value="other">Outro</option></select>
             <button className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-bold text-white">Salvar cobranca</button>
           </form>}>
-          <DataTable headers={["Anunciante","Anuncio","Vencimento","Total","Status","Pagamento","Acoes"]}>{invoices.map(item=><tr key={item.id} className="border-t text-sm"><td className="p-3 font-bold">{item.advertiser_name}</td><td className="p-3">{item.business_name}</td><td className="p-3">{item.due_date}</td><td className="p-3 font-bold">{money(item.total)}</td><td className="p-3">{item.status === "open" && item.due_date < today() ? "overdue" : item.status}</td><td className="p-3">{item.payment_method||"-"}</td><td className="p-3">{item.status !== "paid" && item.status !== "cancelled" && <button onClick={()=>void markInvoicePaid(item)} className="rounded-md bg-emerald-600 px-2 py-1 text-xs font-bold text-white">Marcar paga</button>}</td></tr>)}</DataTable>
+          <DataTable headers={["Anunciante","Anúncio","Vencimento","Valor líquido","Status","Pagamento","Ações"]}>{invoices.map(item=>{const effectiveStatus=item.status==="open"&&item.due_date<today()?"overdue":item.status;return <tr key={item.id} className="text-sm hover:bg-slate-50"><td className="px-4 py-3 font-semibold text-slate-900">{item.advertiser_name}</td><td className="px-4 py-3">{item.business_name}</td><td className="px-4 py-3 tabular-nums">{dateLabel(item.due_date)}</td><td className="px-4 py-3 font-semibold tabular-nums">{money(item.total)}</td><td className="px-4 py-3"><StatusBadge status={effectiveStatus}/></td><td className="px-4 py-3 uppercase">{item.payment_method||"—"}</td><td className="px-4 py-3">{item.status!=="paid"&&item.status!=="cancelled"&&<button onClick={()=>void markInvoicePaid(item)} className="rounded-md border border-emerald-700 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-50">Registrar pagamento</button>}</td></tr>})}</DataTable>
         </CrudSection>
       )}
     </div>
@@ -256,9 +265,41 @@ export function FinanceBackoffice({ businesses }: { businesses: Business[] }) {
 }
 
 function CrudSection({ title, icon, form, children }: { title:string; icon:ReactNode; form:ReactNode; children:ReactNode }) {
-  return <div className="space-y-4"><div className="rounded-lg border border-stone-200 bg-white p-4"><h3 className="mb-4 flex items-center gap-2 font-extrabold">{icon}{title}</h3>{form}</div><div className="overflow-hidden rounded-lg border border-stone-200 bg-white">{children}</div></div>;
+  return (
+    <div className="space-y-4">
+      <details className="group border border-slate-300 bg-white">
+        <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50">
+          <span className="flex items-center gap-2">{icon}{title}</span>
+          <span className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-bold text-white group-open:bg-slate-700">Adicionar registro</span>
+        </summary>
+        <div className="border-t border-slate-200 bg-slate-50/50 p-4">{form}</div>
+      </details>
+      <div className="overflow-hidden border border-slate-300 bg-white">{children}</div>
+    </div>
+  );
 }
 
 function DataTable({headers,children}:{headers:string[];children:ReactNode}) {
-  return <div className="overflow-x-auto"><table className="min-w-full text-left"><thead className="bg-stone-50 text-xs uppercase text-stone-500"><tr>{headers.map(h=><th key={h} className="p-3">{h}</th>)}</tr></thead><tbody>{children}</tbody></table></div>;
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full text-left">
+        <thead className="border-b border-slate-300 bg-slate-100 text-[11px] font-bold uppercase tracking-wide text-slate-600">
+          <tr>{headers.map(h=><th key={h} className="px-4 py-3">{h}</th>)}</tr>
+        </thead>
+        <tbody className="divide-y divide-slate-200 text-slate-700">{children}</tbody>
+      </table>
+    </div>
+  );
+}
+
+function StatusBadge({status}:{status:string}) {
+  const style =
+    status === "paid" || status === "active"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+      : status === "overdue" || status === "expired" || status === "inactive"
+        ? "border-rose-200 bg-rose-50 text-rose-800"
+        : status === "cancelled" || status === "suspended"
+          ? "border-slate-300 bg-slate-100 text-slate-700"
+          : "border-amber-200 bg-amber-50 text-amber-800";
+  return <span className={`inline-flex rounded border px-2 py-1 text-[11px] font-bold ${style}`}>{statusLabels[status] || status}</span>;
 }
