@@ -5,6 +5,7 @@ import {
   Building2,
   CheckCircle2,
   Edit3,
+  ExternalLink,
   ImageIcon,
   List,
   LogOut,
@@ -13,6 +14,7 @@ import {
   PlusCircle,
   Save,
   Search,
+  Share2,
   Star,
   Trash2,
   UploadCloud,
@@ -80,6 +82,11 @@ const MAX_GALLERY_IMAGES = 10;
 const MAX_IMAGE_SIZE_MB = 10;
 const MAX_OPTIMIZED_IMAGE_SIZE_MB = 1.5;
 const MAX_IMAGE_DIMENSION = 1600;
+const PUBLIC_PORTAL_ORIGIN = "https://www.guiacomararaquara.com.br";
+
+function publicBusinessUrl(business: Business) {
+  return `${PUBLIC_PORTAL_ORIGIN}/?empresa=${encodeURIComponent(business.slug ?? business.id)}`;
+}
 
 function getBusinessStatus(business: Business): BusinessStatus {
   return business.status ?? "active";
@@ -181,6 +188,8 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
   const [isGalleryDragging, setIsGalleryDragging] = useState(false);
   const [imageUploadError, setImageUploadError] = useState("");
   const [changingStatusId, setChangingStatusId] = useState("");
+  const [shareBusinessId, setShareBusinessId] = useState("");
+  const [copiedBusinessId, setCopiedBusinessId] = useState("");
   const [onboardingAdvertiserId, setOnboardingAdvertiserId] = useState(0);
   const [onboardingBusiness, setOnboardingBusiness] = useState<Business | null>(null);
   const [onboardingAdvertisement, setOnboardingAdvertisement] = useState<Advertisement | null>(null);
@@ -434,6 +443,25 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
     } finally {
       setChangingStatusId("");
     }
+  };
+
+  const copyBusinessLink = async (business: Business) => {
+    await navigator.clipboard.writeText(publicBusinessUrl(business));
+    setCopiedBusinessId(business.id);
+    window.setTimeout(() => setCopiedBusinessId(""), 2000);
+  };
+
+  const openShare = (network: "whatsapp" | "facebook" | "linkedin", business: Business) => {
+    const url = encodeURIComponent(publicBusinessUrl(business));
+    const message = encodeURIComponent(
+      `Confira ${business.name} no Guia Comercial Araraquara`
+    );
+    const targets = {
+      whatsapp: `https://wa.me/?text=${message}%20${url}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`
+    };
+    window.open(targets[network], "_blank", "noopener,noreferrer,width=720,height=640");
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -802,6 +830,29 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
                                 Suspender
                               </button>
                             )}
+                            {currentStatus === "active" && (
+                              <>
+                                <a
+                                  href={publicBusinessUrl(business)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-blue-200 px-3 text-xs font-bold text-blue-700 hover:bg-blue-50"
+                                  title="Conferir no guia público"
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                  Conferir
+                                </a>
+                                <button
+                                  onClick={() => setShareBusinessId((current) => current === business.id ? "" : business.id)}
+                                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-violet-200 px-3 text-xs font-bold text-violet-700 hover:bg-violet-50"
+                                  title="Compartilhar estabelecimento"
+                                  aria-expanded={shareBusinessId === business.id}
+                                >
+                                  <Share2 className="h-4 w-4" />
+                                  Compartilhar
+                                </button>
+                              </>
+                            )}
                             <button
                               onClick={() => openEditForm(business)}
                               className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-stone-200 text-stone-700 hover:bg-stone-50"
@@ -819,6 +870,16 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
                               <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
+                          {shareBusinessId === business.id && (
+                            <div className="mt-2 flex flex-wrap justify-end gap-1.5 rounded-lg border border-stone-200 bg-stone-50 p-2">
+                              <button onClick={() => openShare("whatsapp", business)} className="rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50">WhatsApp</button>
+                              <button onClick={() => openShare("facebook", business)} className="rounded-md border border-blue-200 bg-white px-2.5 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-50">Facebook</button>
+                              <button onClick={() => openShare("linkedin", business)} className="rounded-md border border-sky-200 bg-white px-2.5 py-1.5 text-xs font-bold text-sky-700 hover:bg-sky-50">LinkedIn</button>
+                              <button onClick={() => void copyBusinessLink(business)} className="rounded-md border border-stone-300 bg-white px-2.5 py-1.5 text-xs font-bold text-stone-700 hover:bg-stone-100">
+                                {copiedBusinessId === business.id ? "Link copiado" : "Copiar link"}
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );

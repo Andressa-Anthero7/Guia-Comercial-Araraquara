@@ -131,6 +131,27 @@ export default function App() {
     };
   }, [isBackofficeAuthenticated, currentPath]);
 
+  useEffect(() => {
+    if (currentPath.startsWith("/backoffice")) return;
+    const businessReference = new URLSearchParams(window.location.search).get("empresa");
+    if (!businessReference) return;
+    const business = businesses.find(
+      (item) =>
+        (item.slug === businessReference || item.id === businessReference) &&
+        (item.status ?? "active") === "active"
+    );
+    if (business) setSelectedBusinessForModal(business);
+  }, [businesses, currentPath]);
+
+  const closeBusinessDetails = () => {
+    setSelectedBusinessForModal(null);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("empresa")) {
+      url.searchParams.delete("empresa");
+      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+  };
+
   const navigateTo = (path: string) => {
     window.history.pushState({}, "", path);
     setCurrentPath(path);
@@ -447,7 +468,7 @@ export default function App() {
           business={selectedBusinessForModal}
           reviews={reviews}
           coupons={coupons}
-          onClose={() => setSelectedBusinessForModal(null)}
+          onClose={closeBusinessDetails}
           onSubmitReview={handleSubmitReview}
         />
       )}
