@@ -202,7 +202,27 @@ export default function App() {
   };
 
   if (currentPath.startsWith("/backoffice")) {
-    if (!isSessionChecked) return <div className="min-h-screen bg-stone-100" />;
+    if (!isSessionChecked) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+          <div className="flex flex-col items-center">
+            <div className="relative">
+              <div className="absolute -inset-3 animate-pulse rounded-2xl bg-amber-400/20" />
+              <img
+                src="/assets/brand-logo.png"
+                alt="Guia Comercial Araraquara"
+                className="relative h-24 w-24 rounded-2xl border border-slate-300 object-cover shadow-lg"
+              />
+            </div>
+            <div className="mt-6 text-sm font-bold tracking-wide text-slate-800">Carregando Backoffice</div>
+            <div className="mt-3 h-1 w-32 overflow-hidden rounded-full bg-slate-300">
+              <div className="h-full w-1/2 animate-pulse rounded-full bg-slate-800" />
+            </div>
+            <div className="mt-3 text-xs text-slate-500">Guia Comercial Araraquara</div>
+          </div>
+        </div>
+      );
+    }
     if (!isBackofficeAuthenticated) {
       return (
         <BackofficeLogin

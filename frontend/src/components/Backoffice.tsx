@@ -7,7 +7,6 @@ import {
   Edit3,
   ImageIcon,
   List,
-  LayoutDashboard,
   LogOut,
   CircleDollarSign,
   UserCircle,
@@ -472,8 +471,12 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onBus
       <header className="border-b border-stone-200 bg-white">
         <div className="mx-auto flex min-h-16 max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-stone-900 text-amber-400">
-              <LayoutDashboard className="h-5 w-5" />
+            <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-lg border border-slate-700 bg-slate-950 shadow-sm">
+              <img
+                src="/assets/brand-logo.png"
+                alt="Guia Comercial Araraquara"
+                className="h-full w-full object-cover"
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">
