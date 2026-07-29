@@ -1,6 +1,19 @@
 from django.contrib import admin
 
-from .models import Business, BusinessImage, Category, Coupon, Event, Review, Tag, UsefulNumber
+from .models import (
+    Advertiser,
+    AdvertisingPlan,
+    AdvertisingSubscription,
+    Business,
+    BusinessImage,
+    Category,
+    Coupon,
+    Event,
+    Invoice,
+    Review,
+    Tag,
+    UsefulNumber,
+)
 
 
 admin.site.site_header = "Guia Comercial Araraquara"
@@ -197,3 +210,41 @@ class UsefulNumberAdmin(admin.ModelAdmin):
     list_editable = ("order", "is_active")
     list_filter = ("category", "is_active")
     search_fields = ("name", "phone", "description")
+
+
+@admin.register(Advertiser)
+class AdvertiserAdmin(admin.ModelAdmin):
+    list_display = ("name", "contact_name", "phone", "email", "status", "updated_at")
+    list_filter = ("status",)
+    search_fields = ("name", "document", "contact_name", "email", "phone")
+    filter_horizontal = ("businesses",)
+
+
+@admin.register(AdvertisingPlan)
+class AdvertisingPlanAdmin(admin.ModelAdmin):
+    list_display = ("name", "price", "billing_cycle", "max_ads", "featured", "is_active")
+    list_editable = ("price", "is_active")
+    list_filter = ("billing_cycle", "featured", "is_active")
+    search_fields = ("name", "description")
+
+
+@admin.register(AdvertisingSubscription)
+class AdvertisingSubscriptionAdmin(admin.ModelAdmin):
+    list_display = (
+        "advertiser", "business", "plan", "agreed_price", "next_due_date", "status"
+    )
+    list_filter = ("status", "plan", "auto_renew")
+    search_fields = ("advertiser__name", "business__name")
+    autocomplete_fields = ("advertiser", "business", "plan")
+
+
+@admin.register(Invoice)
+class InvoiceAdmin(admin.ModelAdmin):
+    list_display = (
+        "subscription", "reference_month", "due_date", "total", "status", "paid_at"
+    )
+    list_filter = ("status", "payment_method", "due_date", "paid_at")
+    search_fields = (
+        "subscription__advertiser__name", "subscription__business__name",
+        "description", "external_reference",
+    )

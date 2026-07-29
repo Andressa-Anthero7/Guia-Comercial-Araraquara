@@ -8,6 +8,9 @@ import {
   ImageIcon,
   List,
   LayoutDashboard,
+  LogOut,
+  CircleDollarSign,
+  UserCircle,
   PlusCircle,
   Save,
   Search,
@@ -17,13 +20,17 @@ import {
   XCircle
 } from "lucide-react";
 import { Business } from "../types";
+import { BackofficeSession } from "../api";
 import { CATEGORIES, NEIGHBORHOODS } from "../data";
+import { FinanceBackoffice } from "./FinanceBackoffice";
 
 interface BackofficeProps {
   businesses: Business[];
   onSaveBusiness: (business: Business) => Promise<void>;
   onDeleteBusiness: (business: Business) => Promise<void>;
   onExit: () => void | Promise<void>;
+  onLogout: () => void | Promise<void>;
+  session: BackofficeSession;
 }
 
 type BusinessStatus = NonNullable<Business["status"]>;
@@ -156,10 +163,11 @@ function buildAddress(form: BusinessFormState) {
   return [streetLine, form.complement.trim()].filter(Boolean).join(" - ");
 }
 
-export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onExit }: BackofficeProps) {
-  const [activeView, setActiveView] = useState<"list" | "form">(() =>
-    window.location.pathname.includes("/cadastro") ? "form" : "list"
-  );
+export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onExit, onLogout, session }: BackofficeProps) {
+  const [activeView, setActiveView] = useState<"list" | "form" | "finance">(() => {
+    if (window.location.pathname.includes("/financeiro")) return "finance";
+    return window.location.pathname.includes("/cadastro") ? "form" : "list";
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | BusinessStatus>("all");
   const [form, setForm] = useState<BusinessFormState>(() => emptyForm());
@@ -461,6 +469,13 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onExi
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
+              <UserCircle className="h-5 w-5 text-amber-500" />
+              <div className="leading-tight">
+                <div className="text-xs font-bold text-stone-900">{session.name || session.username}</div>
+                <div className="text-[10px] text-stone-500">{session.email || "Administrador"}</div>
+              </div>
+            </div>
             <button
               onClick={onExit}
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-stone-200 bg-white px-3.5 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-50"
@@ -468,6 +483,14 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onExi
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Voltar ao portal</span>
+            </button>
+            <button
+              onClick={onLogout}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-rose-200 bg-white px-3.5 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
+              id="backoffice-logout"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Sair</span>
             </button>
             <button
               onClick={openNewForm}
@@ -502,6 +525,22 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onExi
                   Estabelecimentos
                 </span>
                 <span>{totals.total}</span>
+              </button>
+              <button
+                onClick={() => {
+                  window.history.pushState({}, "", "/backoffice/financeiro");
+                  setActiveView("finance");
+                }}
+                className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-semibold ${
+                  activeView === "finance"
+                    ? "bg-stone-900 text-white"
+                    : "border border-stone-200 text-stone-700 hover:bg-stone-50"
+                }`}
+              >
+                <span className="inline-flex items-center gap-2">
+                  <CircleDollarSign className="h-4 w-4" />
+                  Financeiro
+                </span>
               </button>
               <button
                 onClick={openNewForm}
@@ -554,6 +593,7 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onExi
         </aside>
 
         <section className="space-y-6">
+          {activeView === "finance" && <FinanceBackoffice businesses={businesses} />}
           {activeView === "list" && (
           <div className="rounded-lg border border-stone-200 bg-white p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

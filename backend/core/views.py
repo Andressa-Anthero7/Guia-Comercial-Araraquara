@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, login, logout
-from django.db.models import Q
+from datetime import timedelta
+from django.db.models import Q, Sum
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import mixins, status, viewsets
@@ -7,7 +8,18 @@ from rest_framework.decorators import api_view
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 
-from .models import Business, Category, Coupon, Event, Review, UsefulNumber
+from .models import (
+    Advertiser,
+    AdvertisingPlan,
+    AdvertisingSubscription,
+    Business,
+    Category,
+    Coupon,
+    Event,
+    Invoice,
+    Review,
+    UsefulNumber,
+)
 from .serializers import (
     BackofficeBusinessSerializer,
     BackofficeCouponSerializer,
@@ -19,6 +31,10 @@ from .serializers import (
     EventSerializer,
     ReviewSerializer,
     UsefulNumberSerializer,
+    AdvertiserSerializer,
+    AdvertisingPlanSerializer,
+    AdvertisingSubscriptionSerializer,
+    InvoiceSerializer,
 )
 
 
@@ -44,7 +60,13 @@ def backoffice_login(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
     login(request, user)
-    return Response({"is_authenticated": True, "is_backoffice": True})
+    return Response({
+        "is_authenticated": True,
+        "is_backoffice": True,
+        "username": user.get_username(),
+        "name": user.get_full_name(),
+        "email": user.email,
+    })
 
 
 @api_view(["POST"])
@@ -60,8 +82,50 @@ def backoffice_session(request):
         {
             "is_authenticated": user.is_authenticated,
             "is_backoffice": user.is_authenticated and user.is_staff,
+            "username": user.get_username() if user.is_authenticated else "",
+            "name": user.get_full_name() if user.is_authenticated else "",
+            "email": user.email if user.is_authenticated else "",
         }
     )
+
+
+@api_view(["GET"])
+def finance_summary(request):
+    if not request.user.is_staff:
+        return Response({"detail": "Acesso nao autorizado."}, status=status.HTTP_403_FORBIDDEN)
+
+    today = timezone.localdate()
+    invoices = Invoice.objects.exclude(status=Invoice.Status.CANCELLED)
+    open_invoices = invoices.filter(status=Invoice.Status.OPEN)
+    overdue = open_invoices.filter(due_date__lt=today)
+    due_soon = open_invoices.filter(due_date__gte=today, due_date__lte=today + timedelta(days=7))
+    paid_this_month = invoices.filter(
+        status=Invoice.Status.PAID,
+        paid_at__year=today.year,
+        paid_at__month=today.month,
+    )
+
+    def total(queryset):
+        values = queryset.aggregate(
+            amount=Sum("amount"), discount=Sum("discount"), late_fee=Sum("late_fee")
+        )
+        return (
+            (values["amount"] or 0)
+            - (values["discount"] or 0)
+            + (values["late_fee"] or 0)
+        )
+
+    return Response({
+        "active_advertisers": Advertiser.objects.filter(status=Advertiser.Status.ACTIVE).count(),
+        "active_subscriptions": AdvertisingSubscription.objects.filter(
+            status=AdvertisingSubscription.Status.ACTIVE
+        ).count(),
+        "open_amount": total(open_invoices),
+        "overdue_amount": total(overdue),
+        "overdue_count": overdue.count(),
+        "due_soon_count": due_soon.count(),
+        "received_this_month": total(paid_this_month),
+    })
 
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -280,3 +344,37 @@ class BackofficeUsefulNumberViewSet(viewsets.ModelViewSet):
             )
 
         return queryset
+
+
+class AdvertiserViewSet(viewsets.ModelViewSet):
+    serializer_class = AdvertiserSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        return Advertiser.objects.prefetch_related("businesses").order_by("name")
+
+
+class AdvertisingPlanViewSet(viewsets.ModelViewSet):
+    serializer_class = AdvertisingPlanSerializer
+    permission_classes = [IsAdminUser]
+    queryset = AdvertisingPlan.objects.all()
+
+
+class AdvertisingSubscriptionViewSet(viewsets.ModelViewSet):
+    serializer_class = AdvertisingSubscriptionSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        return AdvertisingSubscription.objects.select_related(
+            "advertiser", "business", "plan"
+        )
+
+
+class InvoiceViewSet(viewsets.ModelViewSet):
+    serializer_class = InvoiceSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        return Invoice.objects.select_related(
+            "subscription__advertiser", "subscription__business", "subscription__plan"
+        )

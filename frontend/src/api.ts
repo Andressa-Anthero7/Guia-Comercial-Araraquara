@@ -43,6 +43,86 @@ interface ApiReview {
   created_at: string;
 }
 
+export interface BackofficeSession {
+  is_authenticated: boolean;
+  is_backoffice: boolean;
+  username: string;
+  name: string;
+  email: string;
+}
+
+export interface Advertiser {
+  id: number;
+  user: number | null;
+  businesses: number[];
+  business_names: string[];
+  name: string;
+  document: string;
+  contact_name: string;
+  email: string;
+  phone: string;
+  billing_email: string;
+  status: "active" | "inactive" | "prospect";
+  notes: string;
+}
+
+export interface AdvertisingPlan {
+  id: number;
+  name: string;
+  description: string;
+  price: string;
+  billing_cycle: "monthly" | "quarterly" | "semiannual" | "annual";
+  max_ads: number;
+  featured: boolean;
+  is_active: boolean;
+}
+
+export interface AdvertisingSubscription {
+  id: number;
+  advertiser: number;
+  advertiser_name: string;
+  business: number;
+  business_name: string;
+  plan: number;
+  plan_name: string;
+  start_date: string;
+  end_date: string | null;
+  next_due_date: string;
+  agreed_price: string;
+  status: "active" | "pending" | "suspended" | "cancelled" | "expired";
+  auto_renew: boolean;
+  notes: string;
+}
+
+export interface Invoice {
+  id: number;
+  subscription: number;
+  advertiser_name: string;
+  business_name: string;
+  description: string;
+  reference_month: string;
+  due_date: string;
+  amount: string;
+  discount: string;
+  late_fee: string;
+  total: string;
+  status: "open" | "paid" | "overdue" | "cancelled";
+  paid_at: string | null;
+  payment_method: string;
+  external_reference: string;
+  notes: string;
+}
+
+export interface FinanceSummary {
+  active_advertisers: number;
+  active_subscriptions: number;
+  open_amount: number;
+  overdue_amount: number;
+  overdue_count: number;
+  due_soon_count: number;
+  received_this_month: number;
+}
+
 function csrfToken() {
   const cookie = document.cookie
     .split("; ")
@@ -276,14 +356,12 @@ export async function deleteBackofficeBusiness(business: Business) {
 }
 
 export async function getSession() {
-  return request<{ is_authenticated: boolean; is_backoffice: boolean }>(
-    "/api/auth/session/"
-  );
+  return request<BackofficeSession>("/api/auth/session/");
 }
 
 export async function loginBackoffice(username: string, password: string) {
   await ensureCsrf();
-  return request<{ is_authenticated: boolean; is_backoffice: boolean }>(
+  return request<BackofficeSession>(
     "/api/auth/login/",
     {
       method: "POST",
@@ -299,3 +377,31 @@ export async function logoutBackoffice() {
     { method: "POST" }
   );
 }
+
+export async function loadFinanceData() {
+  const [summary, advertisers, plans, subscriptions, invoices] = await Promise.all([
+    request<FinanceSummary>("/api/backoffice/finance-summary/"),
+    request<Advertiser[]>("/api/backoffice/advertisers/"),
+    request<AdvertisingPlan[]>("/api/backoffice/plans/"),
+    request<AdvertisingSubscription[]>("/api/backoffice/subscriptions/"),
+    request<Invoice[]>("/api/backoffice/invoices/")
+  ]);
+  return { summary, advertisers, plans, subscriptions, invoices };
+}
+
+async function saveResource<T extends { id?: number }>(path: string, value: T) {
+  await ensureCsrf();
+  return request<T>(value.id ? `${path}${value.id}/` : path, {
+    method: value.id ? "PUT" : "POST",
+    body: JSON.stringify(value)
+  });
+}
+
+export const saveAdvertiser = (value: Advertiser) =>
+  saveResource("/api/backoffice/advertisers/", value);
+export const saveAdvertisingPlan = (value: AdvertisingPlan) =>
+  saveResource("/api/backoffice/plans/", value);
+export const saveAdvertisingSubscription = (value: AdvertisingSubscription) =>
+  saveResource("/api/backoffice/subscriptions/", value);
+export const saveInvoice = (value: Invoice) =>
+  saveResource("/api/backoffice/invoices/", value);

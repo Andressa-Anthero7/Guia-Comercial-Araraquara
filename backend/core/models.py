@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
@@ -178,6 +179,157 @@ class BusinessImage(models.Model):
             queryset = queryset.exclude(pk=self.pk)
         if queryset.count() >= 10:
             raise ValidationError("Cada estabelecimento pode ter no maximo 10 imagens.")
+
+
+class Advertiser(models.Model):
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Ativo"
+        INACTIVE = "inactive", "Inativo"
+        PROSPECT = "prospect", "Prospect"
+
+    user = models.OneToOneField(
+        get_user_model(),
+        verbose_name="usuario de acesso",
+        related_name="advertiser_profile",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    businesses = models.ManyToManyField(
+        Business,
+        verbose_name="anuncios",
+        related_name="advertisers",
+        blank=True,
+    )
+    name = models.CharField("nome/razao social", max_length=180)
+    document = models.CharField("CPF/CNPJ", max_length=24, blank=True)
+    contact_name = models.CharField("responsavel", max_length=140, blank=True)
+    email = models.EmailField("e-mail", blank=True)
+    phone = models.CharField("telefone/WhatsApp", max_length=30, blank=True)
+    billing_email = models.EmailField("e-mail financeiro", blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
+    notes = models.TextField("observacoes", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("name",)
+        verbose_name = "anunciante"
+        verbose_name_plural = "anunciantes"
+
+    def __str__(self):
+        return self.name
+
+
+class AdvertisingPlan(models.Model):
+    class BillingCycle(models.TextChoices):
+        MONTHLY = "monthly", "Mensal"
+        QUARTERLY = "quarterly", "Trimestral"
+        SEMIANNUAL = "semiannual", "Semestral"
+        ANNUAL = "annual", "Anual"
+
+    name = models.CharField("nome", max_length=120)
+    description = models.TextField("descricao", blank=True)
+    price = models.DecimalField("valor", max_digits=10, decimal_places=2)
+    billing_cycle = models.CharField(
+        "ciclo", max_length=20, choices=BillingCycle.choices, default=BillingCycle.MONTHLY
+    )
+    max_ads = models.PositiveSmallIntegerField("limite de anuncios", default=1)
+    featured = models.BooleanField("inclui destaque", default=False)
+    is_active = models.BooleanField("ativo", default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("price", "name")
+        verbose_name = "plano de publicidade"
+        verbose_name_plural = "planos de publicidade"
+
+    def __str__(self):
+        return self.name
+
+
+class AdvertisingSubscription(models.Model):
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Ativa"
+        PENDING = "pending", "Pendente"
+        SUSPENDED = "suspended", "Suspensa"
+        CANCELLED = "cancelled", "Cancelada"
+        EXPIRED = "expired", "Vencida"
+
+    advertiser = models.ForeignKey(
+        Advertiser, related_name="subscriptions", on_delete=models.PROTECT
+    )
+    business = models.ForeignKey(
+        Business, verbose_name="anuncio", related_name="subscriptions", on_delete=models.PROTECT
+    )
+    plan = models.ForeignKey(
+        AdvertisingPlan, related_name="subscriptions", on_delete=models.PROTECT
+    )
+    start_date = models.DateField("inicio")
+    end_date = models.DateField("termino", null=True, blank=True)
+    next_due_date = models.DateField("proximo vencimento")
+    agreed_price = models.DecimalField("valor contratado", max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
+    auto_renew = models.BooleanField("renovacao automatica", default=True)
+    notes = models.TextField("observacoes", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("next_due_date", "-created_at")
+        verbose_name = "assinatura de anuncio"
+        verbose_name_plural = "assinaturas de anuncios"
+
+    def __str__(self):
+        return f"{self.advertiser} - {self.business}"
+
+
+class Invoice(models.Model):
+    class Status(models.TextChoices):
+        OPEN = "open", "Em aberto"
+        PAID = "paid", "Paga"
+        OVERDUE = "overdue", "Vencida"
+        CANCELLED = "cancelled", "Cancelada"
+
+    class PaymentMethod(models.TextChoices):
+        PIX = "pix", "PIX"
+        BOLETO = "boleto", "Boleto"
+        CARD = "card", "Cartao"
+        TRANSFER = "transfer", "Transferencia"
+        CASH = "cash", "Dinheiro"
+        OTHER = "other", "Outro"
+
+    subscription = models.ForeignKey(
+        AdvertisingSubscription, related_name="invoices", on_delete=models.CASCADE
+    )
+    description = models.CharField("descricao", max_length=180, blank=True)
+    reference_month = models.DateField("competencia")
+    due_date = models.DateField("vencimento")
+    amount = models.DecimalField("valor", max_digits=10, decimal_places=2)
+    discount = models.DecimalField("desconto", max_digits=10, decimal_places=2, default=0)
+    late_fee = models.DecimalField("multa/juros", max_digits=10, decimal_places=2, default=0)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN)
+    paid_at = models.DateField("pago em", null=True, blank=True)
+    payment_method = models.CharField(
+        "forma de pagamento", max_length=20, choices=PaymentMethod.choices, blank=True
+    )
+    external_reference = models.CharField("referencia externa", max_length=120, blank=True)
+    notes = models.TextField("observacoes", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("due_date", "-created_at")
+        verbose_name = "cobranca"
+        verbose_name_plural = "cobrancas"
+
+    @property
+    def total(self):
+        return self.amount - self.discount + self.late_fee
+
+    def __str__(self):
+        return f"{self.subscription} - {self.due_date}"
 
 
 class Review(models.Model):

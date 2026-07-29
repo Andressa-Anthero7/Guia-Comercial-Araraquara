@@ -17,6 +17,11 @@ from .views import (
     backoffice_session,
     csrf_cookie,
     health_check,
+    finance_summary,
+    AdvertiserViewSet,
+    AdvertisingPlanViewSet,
+    AdvertisingSubscriptionViewSet,
+    InvoiceViewSet,
 )
 
 router = DefaultRouter()
@@ -30,6 +35,10 @@ router.register("backoffice/businesses", BackofficeBusinessViewSet, basename="ba
 router.register("backoffice/coupons", BackofficeCouponViewSet, basename="backoffice-coupon")
 router.register("backoffice/events", BackofficeEventViewSet, basename="backoffice-event")
 router.register("backoffice/useful-numbers", BackofficeUsefulNumberViewSet, basename="backoffice-useful-number")
+router.register("backoffice/advertisers", AdvertiserViewSet, basename="backoffice-advertiser")
+router.register("backoffice/plans", AdvertisingPlanViewSet, basename="backoffice-plan")
+router.register("backoffice/subscriptions", AdvertisingSubscriptionViewSet, basename="backoffice-subscription")
+router.register("backoffice/invoices", InvoiceViewSet, basename="backoffice-invoice")
 
 urlpatterns = [
     path("health/", health_check, name="health-check"),
@@ -37,5 +46,6 @@ urlpatterns = [
     path("auth/login/", backoffice_login, name="backoffice-login"),
     path("auth/logout/", backoffice_logout, name="backoffice-logout"),
     path("auth/session/", backoffice_session, name="backoffice-session"),
+    path("backoffice/finance-summary/", finance_summary, name="finance-summary"),
     path("", include(router.urls)),
 ]

@@ -24,7 +24,8 @@ import {
   loadPortalData,
   loginBackoffice,
   logoutBackoffice,
-  saveBackofficeBusiness
+  saveBackofficeBusiness,
+  BackofficeSession
 } from "./api";
 import { SlidersHorizontal, Sparkles, Building2, Store } from "lucide-react";
 
@@ -33,6 +34,9 @@ export default function App() {
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
   const [isBackofficeAuthenticated, setIsBackofficeAuthenticated] = useState(false);
   const [isSessionChecked, setIsSessionChecked] = useState(false);
+  const [backofficeSession, setBackofficeSession] = useState<BackofficeSession>({
+    is_authenticated: false, is_backoffice: false, username: "", name: "", email: ""
+  });
 
   // --- Persistent States using LocalStorage Fallbacks ---
   const [businesses, setBusinesses] = useState<Business[]>(() => {
@@ -90,7 +94,10 @@ export default function App() {
   useEffect(() => {
     if (!currentPath.startsWith("/backoffice")) return;
     getSession()
-      .then((session) => setIsBackofficeAuthenticated(session.is_backoffice === true))
+      .then((session) => {
+        setBackofficeSession(session);
+        setIsBackofficeAuthenticated(session.is_backoffice === true);
+      })
       .catch(() => setIsBackofficeAuthenticated(false))
       .finally(() => setIsSessionChecked(true));
   }, [currentPath]);
@@ -200,7 +207,8 @@ export default function App() {
       return (
         <BackofficeLogin
           onLogin={async (username, password) => {
-            await loginBackoffice(username, password);
+            const session = await loginBackoffice(username, password);
+            setBackofficeSession(session);
             setIsBackofficeAuthenticated(true);
           }}
           onExit={() => {
@@ -214,8 +222,16 @@ export default function App() {
         businesses={businesses}
         onSaveBusiness={handleSaveBackofficeBusiness}
         onDeleteBusiness={handleDeleteBackofficeBusiness}
+        session={backofficeSession}
         onExit={async () => {
+          window.location.href = "https://webapp415008.ip-45-79-2-160.cloudezapp.io/";
+        }}
+        onLogout={async () => {
           await logoutBackoffice();
+          setIsBackofficeAuthenticated(false);
+          setBackofficeSession({
+            is_authenticated: false, is_backoffice: false, username: "", name: "", email: ""
+          });
           window.location.href = "https://webapp415008.ip-45-79-2-160.cloudezapp.io/";
         }}
       />

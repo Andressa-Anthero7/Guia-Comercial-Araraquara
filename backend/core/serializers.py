@@ -1,6 +1,19 @@
 from rest_framework import serializers
 
-from .models import Business, BusinessImage, Category, Coupon, Event, Review, Tag, UsefulNumber
+from .models import (
+    Advertiser,
+    AdvertisingPlan,
+    AdvertisingSubscription,
+    Business,
+    BusinessImage,
+    Category,
+    Coupon,
+    Event,
+    Invoice,
+    Review,
+    Tag,
+    UsefulNumber,
+)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -310,3 +323,64 @@ class BackofficeUsefulNumberSerializer(serializers.ModelSerializer):
     class Meta:
         model = UsefulNumber
         fields = ("id", "name", "phone", "description", "category", "order", "is_active")
+
+
+class AdvertiserSerializer(serializers.ModelSerializer):
+    business_names = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Advertiser
+        fields = (
+            "id", "user", "businesses", "business_names", "name", "document",
+            "contact_name", "email", "phone", "billing_email", "status", "notes",
+            "created_at", "updated_at",
+        )
+        read_only_fields = ("created_at", "updated_at")
+
+    def get_business_names(self, obj):
+        return [business.name for business in obj.businesses.all()]
+
+
+class AdvertisingPlanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdvertisingPlan
+        fields = (
+            "id", "name", "description", "price", "billing_cycle", "max_ads",
+            "featured", "is_active", "created_at", "updated_at",
+        )
+        read_only_fields = ("created_at", "updated_at")
+
+
+class AdvertisingSubscriptionSerializer(serializers.ModelSerializer):
+    advertiser_name = serializers.CharField(source="advertiser.name", read_only=True)
+    business_name = serializers.CharField(source="business.name", read_only=True)
+    plan_name = serializers.CharField(source="plan.name", read_only=True)
+
+    class Meta:
+        model = AdvertisingSubscription
+        fields = (
+            "id", "advertiser", "advertiser_name", "business", "business_name",
+            "plan", "plan_name", "start_date", "end_date", "next_due_date",
+            "agreed_price", "status", "auto_renew", "notes", "created_at", "updated_at",
+        )
+        read_only_fields = ("created_at", "updated_at")
+
+
+class InvoiceSerializer(serializers.ModelSerializer):
+    advertiser_name = serializers.CharField(
+        source="subscription.advertiser.name", read_only=True
+    )
+    business_name = serializers.CharField(
+        source="subscription.business.name", read_only=True
+    )
+    total = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = Invoice
+        fields = (
+            "id", "subscription", "advertiser_name", "business_name", "description",
+            "reference_month", "due_date", "amount", "discount", "late_fee", "total",
+            "status", "paid_at", "payment_method", "external_reference", "notes",
+            "created_at", "updated_at",
+        )
+        read_only_fields = ("created_at", "updated_at")
