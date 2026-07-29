@@ -25,6 +25,7 @@ import { CATEGORIES, NEIGHBORHOODS } from "../data";
 import { FinanceBackoffice } from "./FinanceBackoffice";
 import { AdvertiserOnboarding } from "./AdvertiserOnboarding";
 import { CommercialManagement } from "./CommercialManagement";
+import { BACKOFFICE_VERSION } from "../version";
 
 interface BackofficeProps {
   businesses: Business[];
@@ -475,7 +476,15 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onBus
               <LayoutDashboard className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-xl font-extrabold tracking-tight text-stone-950">Backoffice</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-extrabold tracking-tight text-stone-950">Backoffice</h1>
+                <span
+                  className="rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-slate-600"
+                  title="Versao do Backoffice"
+                >
+                  v{BACKOFFICE_VERSION}
+                </span>
+              </div>
               <p className="text-xs font-semibold uppercase text-stone-500">Guia Comercial Araraquara</p>
             </div>
           </div>
