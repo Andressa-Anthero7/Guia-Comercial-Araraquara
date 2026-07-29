@@ -539,18 +539,18 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="grid grid-cols-[auto_1fr] gap-2 sm:flex sm:items-center">
             <NotificationCenter />
-            <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
+            <div className="flex min-w-0 items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
               <UserCircle className="h-5 w-5 text-amber-500" />
-              <div className="leading-tight">
-                <div className="text-xs font-bold text-stone-900">{session.name || session.username}</div>
-                <div className="text-[10px] text-stone-500">{session.email || "Administrador"}</div>
+              <div className="min-w-0 leading-tight">
+                <div className="truncate text-xs font-bold text-stone-900">{session.name || session.username}</div>
+                <div className="truncate text-[10px] text-stone-500">{session.email || "Administrador"}</div>
               </div>
             </div>
             <button
               onClick={onExit}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-stone-200 bg-white px-3.5 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-50"
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 transition hover:bg-stone-50 sm:text-sm"
               id="backoffice-exit"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -558,7 +558,7 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
             </button>
             <button
               onClick={onLogout}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-rose-200 bg-white px-3.5 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 sm:text-sm"
               id="backoffice-logout"
             >
               <LogOut className="h-4 w-4" />
@@ -566,7 +566,7 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
             </button>
             <button
               onClick={openNewForm}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-stone-900 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-stone-800"
+              className="col-span-2 inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-stone-900 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-stone-800 sm:col-span-1"
               id="backoffice-new-business"
             >
               <PlusCircle className="h-4 w-4 text-amber-400" />
@@ -576,17 +576,17 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[260px_1fr] lg:px-8">
-        <aside className="space-y-3">
-          <div className="rounded-lg border border-stone-200 bg-white p-4">
-            <div className="mb-3 flex items-center gap-2 text-sm font-bold text-stone-900">
+      <main className="mx-auto grid max-w-7xl gap-4 px-3 py-4 sm:px-6 sm:py-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6 lg:px-8">
+        <aside className="min-w-0 space-y-3">
+          <div className="rounded-lg border border-stone-200 bg-white p-3 lg:p-4">
+            <div className="mb-3 hidden items-center gap-2 text-sm font-bold text-stone-900 lg:flex">
               <Building2 className="h-4 w-4 text-amber-500" />
               <span>Portal</span>
             </div>
-            <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
+            <div className="flex gap-2 overflow-x-auto pb-1 lg:grid lg:grid-cols-1 lg:overflow-visible lg:pb-0">
               <button
                 onClick={closeForm}
-                className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-semibold ${
+                className={`flex min-w-max shrink-0 items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-semibold lg:w-full ${
                   activeView === "list"
                     ? "bg-stone-900 text-white"
                     : "border border-stone-200 text-stone-700 hover:bg-stone-50"
@@ -603,7 +603,7 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
                   window.history.pushState({}, "", "/backoffice/comercial");
                   setActiveView("commercial");
                 }}
-                className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-semibold ${
+                className={`flex min-w-max shrink-0 items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-semibold lg:w-full ${
                   activeView === "commercial"
                     ? "bg-stone-900 text-white"
                     : "border border-stone-200 text-stone-700 hover:bg-stone-50"
@@ -619,7 +619,7 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
                   window.history.pushState({}, "", "/backoffice/financeiro");
                   setActiveView("finance");
                 }}
-                className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-semibold ${
+                className={`flex min-w-max shrink-0 items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-semibold lg:w-full ${
                   activeView === "finance"
                     ? "bg-stone-900 text-white"
                     : "border border-stone-200 text-stone-700 hover:bg-stone-50"
@@ -632,7 +632,7 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
               </button>
               <button
                 onClick={openNewForm}
-                className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-semibold ${
+                className={`flex min-w-max shrink-0 items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-semibold lg:w-full ${
                   activeView === "onboarding"
                     ? "bg-stone-900 text-white"
                     : "border border-stone-200 text-stone-700 hover:bg-stone-50"
@@ -648,7 +648,7 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
                   setActiveView("list");
                   setStatusFilter("pending");
                 }}
-                className="flex items-center justify-between rounded-md border border-stone-200 px-3 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-50"
+                className="flex min-w-max shrink-0 items-center justify-between gap-3 rounded-md border border-stone-200 px-3 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-50 lg:w-full"
               >
                 <span>Pendentes</span>
                 <span>{totals.pending}</span>
@@ -656,7 +656,7 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
             </div>
           </div>
 
-          <div className="rounded-lg border border-stone-200 bg-white p-4">
+          <div className="hidden rounded-lg border border-stone-200 bg-white p-4 lg:block">
             <div className="mb-3 text-xs font-bold uppercase text-stone-500">Publicacao</div>
             <div className="space-y-2">
               {[
@@ -680,7 +680,7 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
           </div>
         </aside>
 
-        <section className="space-y-6">
+        <section className="min-w-0 space-y-4 sm:space-y-6">
           {activeView === "onboarding" && (
             <AdvertiserOnboarding
               onCancel={closeForm}
@@ -740,7 +740,113 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
               </div>
             </div>
 
-            <div className="mt-4 overflow-x-auto">
+            <div className="mt-4 space-y-3 lg:hidden">
+              {filteredBusinesses.map((business) => {
+                const currentStatus = getBusinessStatus(business);
+                return (
+                  <article key={business.id} className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
+                    <div className="flex items-start gap-3">
+                      <img
+                        src={business.image}
+                        alt={business.name}
+                        className="h-16 w-16 shrink-0 rounded-lg bg-stone-100 object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h3 className="truncate font-extrabold text-stone-950">{business.name}</h3>
+                            <p className="truncate text-xs text-stone-500">{categoryName(business.category)}</p>
+                          </div>
+                          {business.isFeatured && <BadgeCheck className="h-5 w-5 shrink-0 text-amber-500" />}
+                        </div>
+                        <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-stone-600">
+                          {business.address} · {business.neighborhood}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid gap-2 border-t border-stone-100 pt-3 sm:grid-cols-2">
+                      <label className="text-[10px] font-bold uppercase tracking-wide text-stone-500">
+                        Status
+                        <select
+                          value={currentStatus}
+                          disabled={changingStatusId === business.id}
+                          onChange={(event) => void changeBusinessStatus(business, event.target.value as BusinessStatus)}
+                          className={`mt-1 h-10 w-full rounded-lg border px-3 text-xs font-bold outline-none disabled:cursor-wait disabled:opacity-60 ${statusClass(currentStatus)}`}
+                        >
+                          {STATUS_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <div className="grid grid-cols-2 gap-2 sm:self-end">
+                        {currentStatus === "active" ? (
+                          <button
+                            disabled={changingStatusId === business.id}
+                            onClick={() => void changeBusinessStatus(business, "suspended")}
+                            className="h-10 rounded-lg border border-orange-200 text-xs font-bold text-orange-700 disabled:opacity-50"
+                          >
+                            Suspender
+                          </button>
+                        ) : (
+                          <button
+                            disabled={changingStatusId === business.id}
+                            onClick={() => void changeBusinessStatus(business, "active")}
+                            className="h-10 rounded-lg border border-emerald-200 text-xs font-bold text-emerald-700 disabled:opacity-50"
+                          >
+                            Publicar
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openEditForm(business)}
+                          className="h-10 rounded-lg border border-stone-200 text-xs font-bold text-stone-700"
+                        >
+                          Editar
+                        </button>
+                      </div>
+                    </div>
+
+                    {currentStatus === "active" && (
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        <a
+                          href={publicBusinessUrl(business)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-blue-200 text-xs font-bold text-blue-700"
+                        >
+                          <ExternalLink className="h-4 w-4" /> Conferir
+                        </a>
+                        <button
+                          onClick={() => setShareBusinessId((current) => current === business.id ? "" : business.id)}
+                          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-violet-200 text-xs font-bold text-violet-700"
+                        >
+                          <Share2 className="h-4 w-4" /> Compartilhar
+                        </button>
+                      </div>
+                    )}
+
+                    {shareBusinessId === business.id && currentStatus === "active" && (
+                      <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-stone-50 p-2">
+                        <button onClick={() => openShare("whatsapp", business)} className="rounded-md border border-emerald-200 bg-white px-2 py-2 text-xs font-bold text-emerald-700">WhatsApp</button>
+                        <button onClick={() => openShare("facebook", business)} className="rounded-md border border-blue-200 bg-white px-2 py-2 text-xs font-bold text-blue-700">Facebook</button>
+                        <button onClick={() => openShare("linkedin", business)} className="rounded-md border border-sky-200 bg-white px-2 py-2 text-xs font-bold text-sky-700">LinkedIn</button>
+                        <button onClick={() => void copyBusinessLink(business)} className="rounded-md border border-stone-300 bg-white px-2 py-2 text-xs font-bold text-stone-700">
+                          {copiedBusinessId === business.id ? "Copiado" : "Copiar link"}
+                        </button>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+              {filteredBusinesses.length === 0 && (
+                <div className="rounded-xl border border-dashed border-stone-300 px-4 py-10 text-center text-sm font-semibold text-stone-500">
+                  Nenhum cadastro encontrado.
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 hidden overflow-x-auto lg:block">
               <table className="min-w-full divide-y divide-stone-100 text-left">
                 <thead>
                   <tr className="text-xs font-bold uppercase text-stone-500">

@@ -190,7 +190,7 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
   const steps = ["Anunciante", "Estabelecimento", "Conteudo do anuncio", "Plano e revisao"];
   return (
     <div className="space-y-5">
-      <div className="rounded-lg border border-stone-200 bg-white p-5">
+      <div className="rounded-lg border border-stone-200 bg-white p-3 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-extrabold">
@@ -200,9 +200,9 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
           </div>
           <button onClick={onCancel} className="rounded-lg border border-stone-200 px-3 py-2 text-sm font-bold">Cancelar</button>
         </div>
-        <div className="mt-5 grid gap-2 sm:grid-cols-4">
+        <div className="mt-5 flex gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0">
           {steps.map((label, index) => (
-            <div key={label} className={`rounded-md px-3 py-2 text-xs font-bold ${step === index + 1 ? "bg-stone-900 text-white" : step > index + 1 ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-500"}`}>
+            <div key={label} className={`min-w-max shrink-0 rounded-md px-3 py-2 text-xs font-bold sm:min-w-0 ${step === index + 1 ? "bg-stone-900 text-white" : step > index + 1 ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-500"}`}>
               {index + 1}. {label}
             </div>
           ))}
@@ -210,7 +210,7 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
       </div>
       {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</div>}
 
-      {step === 1 && <form onSubmit={next} className="rounded-lg border border-stone-200 bg-white p-5">
+      {step === 1 && <form onSubmit={next} className="rounded-lg border border-stone-200 bg-white p-3 sm:p-5">
         <h3 className="mb-1 flex items-center gap-2 text-lg font-extrabold"><UserRound className="h-5 w-5 text-amber-500"/>Dados comerciais do anunciante</h3>
         <p className="mb-4 text-sm text-stone-500">Um anunciante pode ser responsavel por varios estabelecimentos.</p>
         {!!advertisers.length && <select className={`${inputClass} mb-4 w-full`} value={existingAdvertiserId} onChange={e=>setExistingAdvertiserId(Number(e.target.value))}><option value={0}>Criar novo anunciante</option>{advertisers.map(item=><option key={item.id} value={item.id}>{item.name} · {item.document}</option>)}</select>}
@@ -225,7 +225,7 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
         <NextButton/>
       </form>}
 
-      {step === 2 && <form onSubmit={next} className="rounded-lg border border-stone-200 bg-white p-5">
+      {step === 2 && <form onSubmit={next} className="rounded-lg border border-stone-200 bg-white p-3 sm:p-5">
         <h3 className="mb-1 flex items-center gap-2 text-lg font-extrabold"><Building2 className="h-5 w-5 text-amber-500"/>Perfil do estabelecimento</h3>
         <p className="mb-4 text-sm text-stone-500">Informacoes permanentes usadas na busca e no perfil do guia comercial.</p>
         <div className="grid gap-3 md:grid-cols-2">
@@ -244,7 +244,7 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
         <WizardNavigation back={()=>setStep(1)}/>
       </form>}
 
-      {step === 3 && <form onSubmit={next} className="rounded-lg border border-stone-200 bg-white p-5">
+      {step === 3 && <form onSubmit={next} className="rounded-lg border border-stone-200 bg-white p-3 sm:p-5">
         <h3 className="mb-1 flex items-center gap-2 text-lg font-extrabold"><ImagePlus className="h-5 w-5 text-amber-500"/>Conteudo do anuncio</h3>
         <p className="mb-4 text-sm text-stone-500">Fotos, textos e campanha promocional, separados dos dados do estabelecimento.</p>
         <div className="grid gap-3 md:grid-cols-2">
@@ -261,7 +261,7 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
         <WizardNavigation back={()=>existingBusiness ? (initialAdvertiserId ? onCancel() : setStep(1)) : setStep(2)}/>
       </form>}
 
-      {step === 4 && <form onSubmit={finish} className="rounded-lg border border-stone-200 bg-white p-5">
+      {step === 4 && <form onSubmit={finish} className="rounded-lg border border-stone-200 bg-white p-3 sm:p-5">
         <h3 className="mb-1 flex items-center gap-2 text-lg font-extrabold"><CheckCircle2 className="h-5 w-5 text-emerald-500"/>Plano, publicacao e revisao</h3>
         <p className="mb-4 text-sm text-stone-500">Finalize o vinculo comercial e a vigencia do anuncio.</p>
         <div className="grid gap-3 md:grid-cols-2">
@@ -275,7 +275,7 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
           <label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" checked={commercial.autoRenew} onChange={e=>setCommercial({...commercial,autoRenew:e.target.checked})}/>Renovacao automatica</label>
         </div>
         <div className="mt-5 rounded-lg bg-stone-50 p-4 text-sm"><b>{advertisers.find(item=>item.id===existingAdvertiserId)?.name || advertiser.name}</b> → <b>{establishment.name}</b> → {ad.title}</div>
-        <div className="mt-5 flex justify-between"><button type="button" onClick={()=>setStep(3)} className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-bold"><ArrowLeft className="h-4 w-4"/>Voltar</button><button disabled={saving} className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-bold text-white disabled:opacity-50">{saving?"Salvando...":"Concluir cadastro"}</button></div>
+        <div className="mt-5 grid grid-cols-2 gap-2"><button type="button" onClick={()=>setStep(3)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-bold"><ArrowLeft className="h-4 w-4"/>Voltar</button><button disabled={saving} className="min-h-10 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white disabled:opacity-50">{saving?"Salvando...":"Concluir cadastro"}</button></div>
       </form>}
     </div>
   );
@@ -286,5 +286,5 @@ function NextButton() {
 }
 
 function WizardNavigation({back}:{back:()=>void}) {
-  return <div className="mt-5 flex justify-between"><button type="button" onClick={back} className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-bold"><ArrowLeft className="h-4 w-4"/>Voltar</button><button className="inline-flex items-center gap-2 rounded-lg bg-stone-900 px-4 py-2 text-sm font-bold text-white">Continuar<ArrowRight className="h-4 w-4"/></button></div>;
+  return <div className="mt-5 grid grid-cols-2 gap-2"><button type="button" onClick={back} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-bold"><ArrowLeft className="h-4 w-4"/>Voltar</button><button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-stone-900 px-3 py-2 text-sm font-bold text-white">Continuar<ArrowRight className="h-4 w-4"/></button></div>;
 }

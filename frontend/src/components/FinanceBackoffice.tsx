@@ -291,7 +291,7 @@ function CrudSection({ title, icon, form, children }: { title:string; icon:React
 function DataTable({headers,children}:{headers:string[];children:ReactNode}) {
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full text-left">
+      <table className="min-w-[720px] text-left">
         <thead className="border-b border-slate-300 bg-slate-100 text-[11px] font-bold uppercase tracking-wide text-slate-600">
           <tr>{headers.map(h=><th key={h} className="px-4 py-3">{h}</th>)}</tr>
         </thead>
