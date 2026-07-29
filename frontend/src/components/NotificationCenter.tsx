@@ -24,9 +24,11 @@ function relativeDate(value: string) {
 export function NotificationCenter() {
   const [notifications, setNotifications] = useState<BackofficeNotification[]>([]);
   const [open, setOpen] = useState(false);
-  const [pushEnabled, setPushEnabled] = useState(
-    typeof Notification !== "undefined" && Notification.permission === "granted"
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission>(
+    typeof Notification !== "undefined" ? Notification.permission : "default"
   );
+  const [enablingPush, setEnablingPush] = useState(false);
   const [error, setError] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
   const unread = useMemo(
@@ -61,17 +63,43 @@ export function NotificationCenter() {
     return () => document.removeEventListener("mousedown", close);
   }, []);
 
+  useEffect(() => {
+    const inspectPush = async () => {
+      if (!("serviceWorker" in navigator) || typeof Notification === "undefined") return;
+      setPermission(Notification.permission);
+      if (Notification.permission !== "granted") {
+        setPushEnabled(false);
+        return;
+      }
+      const registration = await navigator.serviceWorker.getRegistration("/");
+      setPushEnabled(Boolean(await registration?.pushManager.getSubscription()));
+    };
+    void inspectPush();
+  }, [open]);
+
   const enablePush = async () => {
     setError("");
+    setEnablingPush(true);
     try {
-      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-        throw new Error("Este navegador nao oferece suporte a notificacoes push.");
+      if (typeof Notification === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+        throw new Error("Este navegador não oferece suporte a notificações push.");
+      }
+      if (Notification.permission === "denied") {
+        setPermission("denied");
+        throw new Error("As notificações estão bloqueadas. Clique no ícone ao lado do endereço do site, abra as permissões, selecione “Permitir” em Notificações e recarregue a página.");
       }
       const permission = await Notification.requestPermission();
-      if (permission !== "granted") throw new Error("Permissao de notificacao nao concedida.");
+      setPermission(permission);
+      if (permission === "denied") {
+        throw new Error("A permissão foi bloqueada. Abra as permissões do site na barra de endereço, altere Notificações para “Permitir” e recarregue a página.");
+      }
+      if (permission !== "granted") {
+        throw new Error("A permissão não foi concluída. Clique novamente em ativar e escolha “Permitir” na mensagem do navegador.");
+      }
       const { public_key } = await getPushConfig();
-      if (!public_key) throw new Error("Push ainda nao foi configurado no servidor.");
+      if (!public_key) throw new Error("O push ainda não foi configurado no servidor.");
       const registration = await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
       const existing = await registration.pushManager.getSubscription();
       const subscription = existing ?? await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -80,7 +108,9 @@ export function NotificationCenter() {
       await savePushSubscription(subscription.toJSON());
       setPushEnabled(true);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Nao foi possivel ativar o push.");
+      setError(reason instanceof Error ? reason.message : "Não foi possível ativar o push.");
+    } finally {
+      setEnablingPush(false);
     }
   };
 
@@ -112,10 +142,11 @@ export function NotificationCenter() {
           </div>
           {!pushEnabled && (
             <div className="border-b border-slate-200 bg-slate-50 p-3">
-              <button onClick={()=>void enablePush()} className="flex w-full items-center gap-3 rounded-md border border-slate-300 bg-white p-3 text-left hover:bg-slate-50">
+              <button disabled={enablingPush} onClick={()=>void enablePush()} className="flex w-full items-center gap-3 rounded-md border border-slate-300 bg-white p-3 text-left hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60">
                 <Smartphone className="h-5 w-5 text-slate-600"/>
-                <span><b className="block text-xs text-slate-900">Ativar notificações neste dispositivo</b><small className="text-slate-500">Receba alertas mesmo fora do Backoffice.</small></span>
+                <span><b className="block text-xs text-slate-900">{enablingPush ? "Ativando notificações..." : "Ativar notificações neste dispositivo"}</b><small className="text-slate-500">Receba alertas mesmo fora do Backoffice.</small></span>
               </button>
+              {permission === "denied" && !error && <div className="mt-2 text-xs font-semibold text-amber-700">Notificações bloqueadas neste navegador. Libere a permissão nas configurações do site.</div>}
               {error && <div className="mt-2 text-xs font-semibold text-rose-700">{error}</div>}
             </div>
           )}
