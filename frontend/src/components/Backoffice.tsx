@@ -4,8 +4,6 @@ import {
   BadgeCheck,
   Building2,
   CheckCircle2,
-  Edit3,
-  ExternalLink,
   ImageIcon,
   List,
   LogOut,
@@ -14,9 +12,7 @@ import {
   PlusCircle,
   Save,
   Search,
-  Share2,
   Star,
-  Trash2,
   UploadCloud,
   XCircle
 } from "lucide-react";
@@ -29,6 +25,7 @@ import { CommercialManagement } from "./CommercialManagement";
 import { BACKOFFICE_VERSION } from "../version";
 import { NotificationCenter } from "./NotificationCenter";
 import { parseTags } from "../utils/content";
+import { BusinessManagementModal } from "./BusinessManagementModal";
 
 interface BackofficeProps {
   businesses: Business[];
@@ -82,12 +79,6 @@ const MAX_GALLERY_IMAGES = 10;
 const MAX_IMAGE_SIZE_MB = 10;
 const MAX_OPTIMIZED_IMAGE_SIZE_MB = 1.5;
 const MAX_IMAGE_DIMENSION = 1600;
-const PUBLIC_PORTAL_ORIGIN = "https://www.guiacomararaquara.com.br";
-
-function publicBusinessUrl(business: Business) {
-  return `${PUBLIC_PORTAL_ORIGIN}/?empresa=${encodeURIComponent(business.slug ?? business.id)}`;
-}
-
 function getBusinessStatus(business: Business): BusinessStatus {
   return business.status ?? "active";
 }
@@ -188,8 +179,7 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
   const [isGalleryDragging, setIsGalleryDragging] = useState(false);
   const [imageUploadError, setImageUploadError] = useState("");
   const [changingStatusId, setChangingStatusId] = useState("");
-  const [shareBusinessId, setShareBusinessId] = useState("");
-  const [copiedBusinessId, setCopiedBusinessId] = useState("");
+  const [managedBusinessId, setManagedBusinessId] = useState("");
   const [onboardingAdvertiserId, setOnboardingAdvertiserId] = useState(0);
   const [onboardingBusiness, setOnboardingBusiness] = useState<Business | null>(null);
   const [onboardingAdvertisement, setOnboardingAdvertisement] = useState<Advertisement | null>(null);
@@ -230,6 +220,7 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
       { total: 0, active: 0, pending: 0, draft: 0, suspended: 0, inactive: 0, featured: 0 }
     );
   }, [businesses]);
+  const managedBusiness = businesses.find((business) => business.id === managedBusinessId) ?? null;
 
   const openOnboarding = (advertiserId = 0, business: Business | null = null, advertisement: Advertisement | null = null) => {
     window.history.pushState({}, "", "/backoffice/novo-anuncio");
@@ -443,25 +434,6 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
     } finally {
       setChangingStatusId("");
     }
-  };
-
-  const copyBusinessLink = async (business: Business) => {
-    await navigator.clipboard.writeText(publicBusinessUrl(business));
-    setCopiedBusinessId(business.id);
-    window.setTimeout(() => setCopiedBusinessId(""), 2000);
-  };
-
-  const openShare = (network: "whatsapp" | "facebook" | "linkedin", business: Business) => {
-    const url = encodeURIComponent(publicBusinessUrl(business));
-    const message = encodeURIComponent(
-      `Confira ${business.name} no Guia Comercial Araraquara`
-    );
-    const targets = {
-      whatsapp: `https://wa.me/?text=${message}%20${url}`,
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`
-    };
-    window.open(targets[network], "_blank", "noopener,noreferrer,width=720,height=640");
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -744,7 +716,7 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
               {filteredBusinesses.map((business) => {
                 const currentStatus = getBusinessStatus(business);
                 return (
-                  <article key={business.id} className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
+                  <button key={business.id} onClick={() => setManagedBusinessId(business.id)} className="block w-full rounded-xl border border-stone-200 bg-white p-3 text-left shadow-sm transition active:scale-[.99]">
                     <div className="flex items-start gap-3">
                       <img
                         src={business.image}
@@ -758,7 +730,9 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
                             <h3 className="truncate font-extrabold text-stone-950">{business.name}</h3>
                             <p className="truncate text-xs text-stone-500">{categoryName(business.category)}</p>
                           </div>
-                          {business.isFeatured && <BadgeCheck className="h-5 w-5 shrink-0 text-amber-500" />}
+                          <span className={`shrink-0 rounded-md border px-2 py-1 text-[10px] font-bold ${statusClass(currentStatus)}`}>
+                            {STATUS_OPTIONS.find((option) => option.value === currentStatus)?.label}
+                          </span>
                         </div>
                         <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-stone-600">
                           {business.address} · {business.neighborhood}
@@ -766,77 +740,11 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
                       </div>
                     </div>
 
-                    <div className="mt-3 grid gap-2 border-t border-stone-100 pt-3 sm:grid-cols-2">
-                      <label className="text-[10px] font-bold uppercase tracking-wide text-stone-500">
-                        Status
-                        <select
-                          value={currentStatus}
-                          disabled={changingStatusId === business.id}
-                          onChange={(event) => void changeBusinessStatus(business, event.target.value as BusinessStatus)}
-                          className={`mt-1 h-10 w-full rounded-lg border px-3 text-xs font-bold outline-none disabled:cursor-wait disabled:opacity-60 ${statusClass(currentStatus)}`}
-                        >
-                          {STATUS_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>{option.label}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <div className="grid grid-cols-2 gap-2 sm:self-end">
-                        {currentStatus === "active" ? (
-                          <button
-                            disabled={changingStatusId === business.id}
-                            onClick={() => void changeBusinessStatus(business, "suspended")}
-                            className="h-10 rounded-lg border border-orange-200 text-xs font-bold text-orange-700 disabled:opacity-50"
-                          >
-                            Suspender
-                          </button>
-                        ) : (
-                          <button
-                            disabled={changingStatusId === business.id}
-                            onClick={() => void changeBusinessStatus(business, "active")}
-                            className="h-10 rounded-lg border border-emerald-200 text-xs font-bold text-emerald-700 disabled:opacity-50"
-                          >
-                            Publicar
-                          </button>
-                        )}
-                        <button
-                          onClick={() => openEditForm(business)}
-                          className="h-10 rounded-lg border border-stone-200 text-xs font-bold text-stone-700"
-                        >
-                          Editar
-                        </button>
-                      </div>
+                    <div className="mt-3 flex items-center justify-between border-t border-stone-100 pt-3 text-xs font-bold text-stone-500">
+                      <span>{business.isFeatured ? "Destaque no guia" : "Cadastro comercial"}</span>
+                      <span className="text-stone-900">Abrir gestão →</span>
                     </div>
-
-                    {currentStatus === "active" && (
-                      <div className="mt-2 grid grid-cols-2 gap-2">
-                        <a
-                          href={publicBusinessUrl(business)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-blue-200 text-xs font-bold text-blue-700"
-                        >
-                          <ExternalLink className="h-4 w-4" /> Conferir
-                        </a>
-                        <button
-                          onClick={() => setShareBusinessId((current) => current === business.id ? "" : business.id)}
-                          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-violet-200 text-xs font-bold text-violet-700"
-                        >
-                          <Share2 className="h-4 w-4" /> Compartilhar
-                        </button>
-                      </div>
-                    )}
-
-                    {shareBusinessId === business.id && currentStatus === "active" && (
-                      <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-stone-50 p-2">
-                        <button onClick={() => openShare("whatsapp", business)} className="rounded-md border border-emerald-200 bg-white px-2 py-2 text-xs font-bold text-emerald-700">WhatsApp</button>
-                        <button onClick={() => openShare("facebook", business)} className="rounded-md border border-blue-200 bg-white px-2 py-2 text-xs font-bold text-blue-700">Facebook</button>
-                        <button onClick={() => openShare("linkedin", business)} className="rounded-md border border-sky-200 bg-white px-2 py-2 text-xs font-bold text-sky-700">LinkedIn</button>
-                        <button onClick={() => void copyBusinessLink(business)} className="rounded-md border border-stone-300 bg-white px-2 py-2 text-xs font-bold text-stone-700">
-                          {copiedBusinessId === business.id ? "Copiado" : "Copiar link"}
-                        </button>
-                      </div>
-                    )}
-                  </article>
+                  </button>
                 );
               })}
               {filteredBusinesses.length === 0 && (
@@ -893,99 +801,14 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
                           </div>
                         </td>
                         <td className="px-3 py-3">
-                          <div className="min-w-40 space-y-1.5">
-                            <select
-                              value={currentStatus}
-                              disabled={changingStatusId === business.id}
-                              onChange={(event) => void changeBusinessStatus(business, event.target.value as BusinessStatus)}
-                              className={`h-9 w-full rounded-md border px-2 text-xs font-bold outline-none disabled:cursor-wait disabled:opacity-60 ${statusClass(currentStatus)}`}
-                              aria-label={`Status de ${business.name}`}
-                            >
-                              {STATUS_OPTIONS.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                            <div className="text-[10px] font-medium text-stone-500">
-                              {changingStatusId === business.id ? "Atualizando..." : "Alteração aplicada imediatamente"}
-                            </div>
-                          </div>
+                          <span className={`inline-flex rounded-md border px-2.5 py-1.5 text-xs font-bold ${statusClass(currentStatus)}`}>
+                            {STATUS_OPTIONS.find((option) => option.value === currentStatus)?.label}
+                          </span>
                         </td>
                         <td className="px-3 py-3">
-                          <div className="flex flex-wrap justify-end gap-2">
-                            {currentStatus !== "active" && (
-                              <button
-                                disabled={changingStatusId === business.id}
-                                onClick={() => void changeBusinessStatus(business, "active")}
-                                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-emerald-200 px-3 text-xs font-bold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
-                                title="Liberar no guia"
-                              >
-                                <CheckCircle2 className="h-4 w-4" />
-                                Publicar
-                              </button>
-                            )}
-                            {currentStatus === "active" && (
-                              <button
-                                disabled={changingStatusId === business.id}
-                                onClick={() => void changeBusinessStatus(business, "suspended")}
-                                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-orange-200 px-3 text-xs font-bold text-orange-700 hover:bg-orange-50 disabled:opacity-50"
-                                title="Suspender publicação"
-                              >
-                                <XCircle className="h-4 w-4" />
-                                Suspender
-                              </button>
-                            )}
-                            {currentStatus === "active" && (
-                              <>
-                                <a
-                                  href={publicBusinessUrl(business)}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-blue-200 px-3 text-xs font-bold text-blue-700 hover:bg-blue-50"
-                                  title="Conferir no guia público"
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                  Conferir
-                                </a>
-                                <button
-                                  onClick={() => setShareBusinessId((current) => current === business.id ? "" : business.id)}
-                                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-violet-200 px-3 text-xs font-bold text-violet-700 hover:bg-violet-50"
-                                  title="Compartilhar estabelecimento"
-                                  aria-expanded={shareBusinessId === business.id}
-                                >
-                                  <Share2 className="h-4 w-4" />
-                                  Compartilhar
-                                </button>
-                              </>
-                            )}
-                            <button
-                              onClick={() => openEditForm(business)}
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-stone-200 text-stone-700 hover:bg-stone-50"
-                              title="Editar"
-                              id={`backoffice-edit-${business.id}`}
-                            >
-                              <Edit3 className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(business)}
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50"
-                              title="Remover"
-                              id={`backoffice-delete-${business.id}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                          {shareBusinessId === business.id && (
-                            <div className="mt-2 flex flex-wrap justify-end gap-1.5 rounded-lg border border-stone-200 bg-stone-50 p-2">
-                              <button onClick={() => openShare("whatsapp", business)} className="rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50">WhatsApp</button>
-                              <button onClick={() => openShare("facebook", business)} className="rounded-md border border-blue-200 bg-white px-2.5 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-50">Facebook</button>
-                              <button onClick={() => openShare("linkedin", business)} className="rounded-md border border-sky-200 bg-white px-2.5 py-1.5 text-xs font-bold text-sky-700 hover:bg-sky-50">LinkedIn</button>
-                              <button onClick={() => void copyBusinessLink(business)} className="rounded-md border border-stone-300 bg-white px-2.5 py-1.5 text-xs font-bold text-stone-700 hover:bg-stone-100">
-                                {copiedBusinessId === business.id ? "Link copiado" : "Copiar link"}
-                              </button>
-                            </div>
-                          )}
+                          <button onClick={() => setManagedBusinessId(business.id)} className="ml-auto flex h-9 items-center justify-center rounded-lg bg-stone-900 px-4 text-xs font-bold text-white hover:bg-stone-800">
+                            Gerenciar
+                          </button>
                         </td>
                       </tr>
                     );
@@ -1275,6 +1098,18 @@ export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus,
           )}
         </section>
       </main>
+      {managedBusiness && (
+        <BusinessManagementModal
+          business={managedBusiness}
+          onClose={() => setManagedBusinessId("")}
+          onEdit={(business) => {
+            setManagedBusinessId("");
+            openEditForm(business);
+          }}
+          onDelete={handleDelete}
+          onStatusChange={changeBusinessStatus}
+        />
+      )}
     </div>
   );
 }
