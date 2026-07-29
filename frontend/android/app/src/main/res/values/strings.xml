@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Guia Comercial Araraquara</string>
+    <string name="title_activity_main">Guia Comercial Araraquara</string>
+    <string name="package_name">br.com.guiacomercialararaquara.app</string>
+    <string name="custom_url_scheme">br.com.guiacomercialararaquara.app</string>
+</resources>
