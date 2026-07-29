@@ -20,10 +20,11 @@ import {
   XCircle
 } from "lucide-react";
 import { Business } from "../types";
-import { BackofficeSession } from "../api";
+import { Advertisement, BackofficeSession } from "../api";
 import { CATEGORIES, NEIGHBORHOODS } from "../data";
 import { FinanceBackoffice } from "./FinanceBackoffice";
 import { AdvertiserOnboarding } from "./AdvertiserOnboarding";
+import { CommercialManagement } from "./CommercialManagement";
 
 interface BackofficeProps {
   businesses: Business[];
@@ -166,8 +167,9 @@ function buildAddress(form: BusinessFormState) {
 }
 
 export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onBusinessCreated, onExit, onLogout, session }: BackofficeProps) {
-  const [activeView, setActiveView] = useState<"list" | "form" | "finance" | "onboarding">(() => {
+  const [activeView, setActiveView] = useState<"list" | "form" | "finance" | "onboarding" | "commercial">(() => {
     if (window.location.pathname.includes("/financeiro")) return "finance";
+    if (window.location.pathname.includes("/comercial")) return "commercial";
     if (window.location.pathname.includes("/novo-anuncio")) return "onboarding";
     return window.location.pathname.includes("/cadastro") ? "form" : "list";
   });
@@ -177,6 +179,9 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onBus
   const [isLogoDragging, setIsLogoDragging] = useState(false);
   const [isGalleryDragging, setIsGalleryDragging] = useState(false);
   const [imageUploadError, setImageUploadError] = useState("");
+  const [onboardingAdvertiserId, setOnboardingAdvertiserId] = useState(0);
+  const [onboardingBusiness, setOnboardingBusiness] = useState<Business | null>(null);
+  const [onboardingAdvertisement, setOnboardingAdvertisement] = useState<Advertisement | null>(null);
 
   const filteredBusinesses = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -215,11 +220,15 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onBus
     );
   }, [businesses]);
 
-  const openNewForm = () => {
+  const openOnboarding = (advertiserId = 0, business: Business | null = null, advertisement: Advertisement | null = null) => {
     window.history.pushState({}, "", "/backoffice/novo-anuncio");
+    setOnboardingAdvertiserId(advertiserId);
+    setOnboardingBusiness(business);
+    setOnboardingAdvertisement(advertisement);
     setActiveView("onboarding");
     setImageUploadError("");
   };
+  const openNewForm = () => openOnboarding();
 
   const openEditForm = (business: Business) => {
     window.history.pushState({}, "", `/backoffice/estabelecimentos/${business.id}/editar`);
@@ -232,6 +241,9 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onBus
 
   const closeForm = () => {
     window.history.pushState({}, "", "/backoffice");
+    setOnboardingAdvertiserId(0);
+    setOnboardingBusiness(null);
+    setOnboardingAdvertisement(null);
     setForm(emptyForm());
     setImageUploadError("");
     setIsLogoDragging(false);
@@ -528,6 +540,22 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onBus
               </button>
               <button
                 onClick={() => {
+                  window.history.pushState({}, "", "/backoffice/comercial");
+                  setActiveView("commercial");
+                }}
+                className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-semibold ${
+                  activeView === "commercial"
+                    ? "bg-stone-900 text-white"
+                    : "border border-stone-200 text-stone-700 hover:bg-stone-50"
+                }`}
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Central comercial
+                </span>
+              </button>
+              <button
+                onClick={() => {
                   window.history.pushState({}, "", "/backoffice/financeiro");
                   setActiveView("finance");
                 }}
@@ -596,10 +624,23 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onBus
           {activeView === "onboarding" && (
             <AdvertiserOnboarding
               onCancel={closeForm}
+              initialAdvertiserId={onboardingAdvertiserId}
+              existingBusiness={onboardingBusiness}
+              existingAdvertisement={onboardingAdvertisement}
               onComplete={(business) => {
                 onBusinessCreated(business);
                 closeForm();
               }}
+            />
+          )}
+          {activeView === "commercial" && (
+            <CommercialManagement
+              businesses={businesses}
+              onNewAdvertiser={() => openOnboarding()}
+              onNewBusiness={(advertiserId) => openOnboarding(advertiserId)}
+              onNewAdvertisement={(business, advertiserId) => openOnboarding(advertiserId, business)}
+              onEditAdvertisement={(advertisement, business, advertiserId) => openOnboarding(advertiserId, business, advertisement)}
+              onEditBusiness={openEditForm}
             />
           )}
           {activeView === "finance" && <FinanceBackoffice businesses={businesses} />}

@@ -10,6 +10,9 @@ import { Business } from "../types";
 interface Props {
   onCancel: () => void;
   onComplete: (business: Business) => void;
+  initialAdvertiserId?: number;
+  existingBusiness?: Business | null;
+  existingAdvertisement?: Advertisement | null;
 }
 
 const now = () => new Date().toISOString().slice(0, 10);
@@ -35,11 +38,13 @@ async function optimizeImage(file: File) {
   });
 }
 
-export function AdvertiserOnboarding({ onCancel, onComplete }: Props) {
-  const [step, setStep] = useState(1);
+export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId = 0, existingBusiness = null, existingAdvertisement = null }: Props) {
+  const [step, setStep] = useState(
+    existingBusiness && initialAdvertiserId ? 3 : initialAdvertiserId ? 2 : 1
+  );
   const [advertisers, setAdvertisers] = useState<Advertiser[]>([]);
   const [plans, setPlans] = useState<AdvertisingPlan[]>([]);
-  const [existingAdvertiserId, setExistingAdvertiserId] = useState(0);
+  const [existingAdvertiserId, setExistingAdvertiserId] = useState(initialAdvertiserId);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [advertiser, setAdvertiser] = useState<Advertiser>({
@@ -47,15 +52,29 @@ export function AdvertiserOnboarding({ onCancel, onComplete }: Props) {
     contact_name: "", email: "", phone: "", billing_email: "", status: "active", notes: ""
   });
   const [establishment, setEstablishment] = useState({
-    name: "", category: CATEGORIES[0]?.slug ?? "", street: "", number: "", complement: "",
-    neighborhood: NEIGHBORHOODS[0] ?? "", city: "Araraquara", state: "SP", postalCode: "",
-    phone: "", email: "", website: "", instagram: "", hours: "Seg - Sab: 08:00 as 18:00"
+    name: existingBusiness?.name ?? "", category: existingBusiness?.category ?? CATEGORIES[0]?.slug ?? "",
+    street: existingBusiness?.street ?? "", number: existingBusiness?.number ?? "",
+    complement: existingBusiness?.complement ?? "", neighborhood: existingBusiness?.neighborhood ?? NEIGHBORHOODS[0] ?? "",
+    city: existingBusiness?.city ?? "Araraquara", state: existingBusiness?.state ?? "SP",
+    postalCode: existingBusiness?.postalCode ?? "", phone: existingBusiness?.phone ?? "",
+    email: existingBusiness?.email ?? "", website: existingBusiness?.website ?? "",
+    instagram: existingBusiness?.instagram ?? "", hours: existingBusiness?.hours ?? "Seg - Sab: 08:00 as 18:00"
   });
   const [ad, setAd] = useState({
-    title: "", shortDescription: "", description: "", callToAction: "Saiba mais",
-    destinationUrl: "", logoImage: "", coverImage: "", videoUrl: "", tags: "",
-    photos: [] as string[], startsAt: now(), endsAt: "", status: "review" as Advertisement["status"],
-    featured: false
+    title: existingAdvertisement?.title ?? (existingBusiness ? `${existingBusiness.name} - nova campanha` : ""),
+    shortDescription: existingAdvertisement?.short_description ?? "",
+    description: existingAdvertisement?.description ?? "",
+    callToAction: existingAdvertisement?.call_to_action ?? "Saiba mais",
+    destinationUrl: existingAdvertisement?.destination_url ?? "",
+    logoImage: existingAdvertisement?.logo_image ?? "",
+    coverImage: existingAdvertisement?.cover_image ?? "",
+    videoUrl: existingAdvertisement?.video_url ?? "",
+    tags: existingAdvertisement?.tag_names.join(", ") ?? "",
+    photos: existingAdvertisement?.media.filter(item => item.media_type === "image").map(item => item.file_data) ?? [],
+    startsAt: existingAdvertisement?.starts_at ?? now(),
+    endsAt: existingAdvertisement?.ends_at ?? "",
+    status: existingAdvertisement?.status ?? "review" as Advertisement["status"],
+    featured: existingAdvertisement?.is_featured ?? false
   });
   const [commercial, setCommercial] = useState({
     planId: 0, price: "0.00", nextDueDate: now(), autoRenew: true, notes: ""
@@ -73,7 +92,7 @@ export function AdvertiserOnboarding({ onCancel, onComplete }: Props) {
   const next = (event: FormEvent) => {
     event.preventDefault();
     setError("");
-    setStep(current => Math.min(4, current + 1));
+    setStep(current => existingBusiness && current === 1 ? 3 : Math.min(4, current + 1));
   };
 
   const addPhotos = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -99,7 +118,7 @@ export function AdvertiserOnboarding({ onCancel, onComplete }: Props) {
       let owner = advertisers.find(item => item.id === existingAdvertiserId);
       if (!owner) owner = await saveAdvertiser(advertiser);
 
-      const business = await saveBackofficeBusiness({
+      const business = existingBusiness ?? await saveBackofficeBusiness({
         id: `new-${Date.now()}`,
         name: establishment.name.trim(),
         description: ad.description.trim(),
@@ -128,13 +147,15 @@ export function AdvertiserOnboarding({ onCancel, onComplete }: Props) {
         tags: ad.tags.split(",").map(tag => tag.trim()).filter(Boolean)
       });
 
-      owner = await saveAdvertiser({
-        ...owner,
-        businesses: Array.from(new Set([...owner.businesses, Number(business.id)]))
-      });
+      if (!owner.businesses.includes(Number(business.id))) {
+        owner = await saveAdvertiser({
+          ...owner,
+          businesses: Array.from(new Set([...owner.businesses, Number(business.id)]))
+        });
+      }
 
       const advertisement = await saveAdvertisement({
-        id: 0,
+        id: existingAdvertisement?.id ?? 0,
         business: Number(business.id),
         business_name: business.name,
         title: ad.title || business.name,
@@ -154,7 +175,7 @@ export function AdvertiserOnboarding({ onCancel, onComplete }: Props) {
         ends_at: ad.endsAt || null,
         status: ad.status,
         is_featured: ad.featured,
-        is_primary: true
+        is_primary: existingAdvertisement?.is_primary ?? !existingBusiness
       });
 
       if (commercial.planId) {
@@ -190,7 +211,9 @@ export function AdvertiserOnboarding({ onCancel, onComplete }: Props) {
       <div className="rounded-lg border border-stone-200 bg-white p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl font-extrabold">Novo anunciante e anuncio</h2>
+            <h2 className="text-xl font-extrabold">
+              {existingAdvertisement ? "Editar anuncio" : existingBusiness ? "Novo anuncio para estabelecimento existente" : initialAdvertiserId ? "Novo estabelecimento para anunciante" : "Novo anunciante e anuncio"}
+            </h2>
             <p className="text-sm text-stone-500">O perfil comercial continua sendo a base permanente do guia.</p>
           </div>
           <button onClick={onCancel} className="rounded-lg border border-stone-200 px-3 py-2 text-sm font-bold">Cancelar</button>
@@ -253,7 +276,7 @@ export function AdvertiserOnboarding({ onCancel, onComplete }: Props) {
           <label className="rounded-lg border-2 border-dashed border-stone-200 p-4 text-center text-sm font-bold md:col-span-2">Adicionar fotos (ate 10)<input type="file" accept="image/*" multiple className="mt-2 block w-full text-xs" onChange={e=>void addPhotos(e)}/></label>
           {!!ad.photos.length && <div className="flex flex-wrap gap-2 md:col-span-2">{ad.photos.map((photo,index)=><img key={index} src={photo} className="h-20 w-20 rounded-md object-cover"/>)}</div>}
         </div>
-        <WizardNavigation back={()=>setStep(2)}/>
+        <WizardNavigation back={()=>existingBusiness ? (initialAdvertiserId ? onCancel() : setStep(1)) : setStep(2)}/>
       </form>}
 
       {step === 4 && <form onSubmit={finish} className="rounded-lg border border-stone-200 bg-white p-5">

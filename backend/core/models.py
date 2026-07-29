@@ -284,6 +284,13 @@ class Advertisement(models.Model):
         ordering = ("-is_primary", "-updated_at")
         verbose_name = "anuncio"
         verbose_name_plural = "anuncios"
+        constraints = [
+            models.UniqueConstraint(
+                fields=("business",),
+                condition=models.Q(is_primary=True),
+                name="one_primary_advertisement_per_business",
+            )
+        ]
 
     def __str__(self):
         return f"{self.business} - {self.title}"
