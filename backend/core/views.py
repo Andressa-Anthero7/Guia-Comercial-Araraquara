@@ -12,6 +12,7 @@ from .models import (
     Advertiser,
     AdvertisingPlan,
     AdvertisingSubscription,
+    Advertisement,
     Business,
     Category,
     Coupon,
@@ -34,6 +35,7 @@ from .serializers import (
     AdvertiserSerializer,
     AdvertisingPlanSerializer,
     AdvertisingSubscriptionSerializer,
+    AdvertisementSerializer,
     InvoiceSerializer,
 )
 
@@ -378,3 +380,17 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         return Invoice.objects.select_related(
             "subscription__advertiser", "subscription__business", "subscription__plan"
         )
+
+
+class AdvertisementViewSet(viewsets.ModelViewSet):
+    serializer_class = AdvertisementSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        queryset = Advertisement.objects.select_related("business").prefetch_related(
+            "tags", "media"
+        )
+        business = self.request.query_params.get("business")
+        if business:
+            queryset = queryset.filter(business_id=business)
+        return queryset

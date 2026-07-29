@@ -9,6 +9,7 @@ from .models import (
     Advertiser,
     AdvertisingPlan,
     AdvertisingSubscription,
+    Advertisement,
     Business,
     Invoice,
 )
@@ -91,3 +92,47 @@ class FinanceApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["username"], "finance-admin")
         self.assertEqual(response.data["name"], "Financeiro")
+
+    def test_primary_advertisement_updates_public_guide_profile(self):
+        response = self.client.post(
+            "/api/backoffice/advertisements/",
+            {
+                "business": self.business.id,
+                "title": "Oferta principal",
+                "short_description": "Atendimento especializado",
+                "description": "Texto completo exibido no guia comercial.",
+                "call_to_action": "Fale conosco",
+                "destination_url": "https://example.com/contato",
+                "logo_image": "data:image/webp;base64,logo",
+                "cover_image": "data:image/webp;base64,capa",
+                "video_url": "https://www.youtube.com/watch?v=example",
+                "tags": ["Servico local", "Araraquara"],
+                "media": [
+                    {
+                        "media_type": "image",
+                        "file_data": "data:image/webp;base64,foto",
+                        "alt_text": "Fachada",
+                        "caption": "Nossa unidade",
+                        "order": 0,
+                    }
+                ],
+                "starts_at": date.today(),
+                "status": Advertisement.Status.PUBLISHED,
+                "is_featured": True,
+                "is_primary": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201, response.data)
+        self.business.refresh_from_db()
+        self.assertEqual(
+            self.business.description, "Texto completo exibido no guia comercial."
+        )
+        self.assertEqual(self.business.status, Business.Status.ACTIVE)
+        self.assertTrue(self.business.is_featured)
+        self.assertEqual(self.business.images.count(), 1)
+        self.assertEqual(
+            set(self.business.tags.values_list("name", flat=True)),
+            {"Servico local", "Araraquara"},
+        )

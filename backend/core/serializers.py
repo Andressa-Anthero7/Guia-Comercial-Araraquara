@@ -4,6 +4,8 @@ from .models import (
     Advertiser,
     AdvertisingPlan,
     AdvertisingSubscription,
+    Advertisement,
+    AdvertisementMedia,
     Business,
     BusinessImage,
     Category,
@@ -359,11 +361,102 @@ class AdvertisingSubscriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdvertisingSubscription
         fields = (
-            "id", "advertiser", "advertiser_name", "business", "business_name",
+            "id", "advertiser", "advertiser_name", "business", "business_name", "advertisement",
             "plan", "plan_name", "start_date", "end_date", "next_due_date",
             "agreed_price", "status", "auto_renew", "notes", "created_at", "updated_at",
         )
         read_only_fields = ("created_at", "updated_at")
+
+
+class AdvertisementMediaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdvertisementMedia
+        fields = ("id", "media_type", "file_data", "alt_text", "caption", "order")
+        read_only_fields = ("id",)
+
+
+class AdvertisementSerializer(serializers.ModelSerializer):
+    business_name = serializers.CharField(source="business.name", read_only=True)
+    tags = serializers.ListField(
+        child=serializers.CharField(max_length=80), required=False, write_only=True
+    )
+    tag_names = serializers.SerializerMethodField(read_only=True)
+    media = AdvertisementMediaSerializer(many=True, required=False)
+
+    class Meta:
+        model = Advertisement
+        fields = (
+            "id", "business", "business_name", "title", "short_description",
+            "description", "call_to_action", "destination_url", "logo_image",
+            "cover_image", "video_url", "tags", "tag_names", "media", "starts_at",
+            "ends_at", "status", "is_featured", "is_primary", "created_at", "updated_at",
+        )
+        read_only_fields = ("created_at", "updated_at")
+
+    def validate(self, attrs):
+        starts_at = attrs.get("starts_at", getattr(self.instance, "starts_at", None))
+        ends_at = attrs.get("ends_at", getattr(self.instance, "ends_at", None))
+        if starts_at and ends_at and ends_at < starts_at:
+            raise serializers.ValidationError(
+                {"ends_at": "O fim da publicacao deve ser posterior ao inicio."}
+            )
+        return attrs
+
+    def get_tag_names(self, obj):
+        return [tag.name for tag in obj.tags.all()]
+
+    def create(self, validated_data):
+        tags = validated_data.pop("tags", [])
+        media = validated_data.pop("media", [])
+        advertisement = super().create(validated_data)
+        self._set_relations(advertisement, tags, media)
+        return advertisement
+
+    def update(self, instance, validated_data):
+        tags = validated_data.pop("tags", None)
+        media = validated_data.pop("media", None)
+        advertisement = super().update(instance, validated_data)
+        self._set_relations(advertisement, tags, media)
+        return advertisement
+
+    def _set_relations(self, advertisement, tag_names, media):
+        if tag_names is not None:
+            tags = []
+            for name in tag_names:
+                clean_name = name.strip()
+                if clean_name:
+                    tags.append(Tag.objects.get_or_create(name=clean_name)[0])
+            advertisement.tags.set(tags)
+        if media is not None:
+            advertisement.media.all().delete()
+            for index, item in enumerate(media[:10]):
+                item.pop("order", None)
+                AdvertisementMedia.objects.create(
+                    advertisement=advertisement, order=index, **item
+                )
+        self._sync_guide_profile(advertisement)
+
+    def _sync_guide_profile(self, advertisement):
+        if not advertisement.is_primary:
+            return
+        business = advertisement.business
+        business.description = advertisement.description or advertisement.short_description
+        business.logo_image = advertisement.logo_image
+        business.image_url = advertisement.cover_image
+        business.is_featured = advertisement.is_featured
+        if advertisement.status == Advertisement.Status.PUBLISHED:
+            business.status = Business.Status.ACTIVE
+        business.save()
+        business.tags.set(advertisement.tags.all())
+        image_values = [
+            item.file_data
+            for item in advertisement.media.all()
+            if item.media_type == AdvertisementMedia.MediaType.IMAGE
+        ]
+        if image_values:
+            business.images.all().delete()
+            for index, value in enumerate(image_values):
+                BusinessImage.objects.create(business=business, image=value, order=index)
 
 
 class InvoiceSerializer(serializers.ModelSerializer):

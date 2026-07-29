@@ -22,6 +22,7 @@ from .views import (
     AdvertisingPlanViewSet,
     AdvertisingSubscriptionViewSet,
     InvoiceViewSet,
+    AdvertisementViewSet,
 )
 
 router = DefaultRouter()
@@ -39,6 +40,7 @@ router.register("backoffice/advertisers", AdvertiserViewSet, basename="backoffic
 router.register("backoffice/plans", AdvertisingPlanViewSet, basename="backoffice-plan")
 router.register("backoffice/subscriptions", AdvertisingSubscriptionViewSet, basename="backoffice-subscription")
 router.register("backoffice/invoices", InvoiceViewSet, basename="backoffice-invoice")
+router.register("backoffice/advertisements", AdvertisementViewSet, basename="backoffice-advertisement")
 
 urlpatterns = [
     path("health/", health_check, name="health-check"),

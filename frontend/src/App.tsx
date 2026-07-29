@@ -222,6 +222,9 @@ export default function App() {
         businesses={businesses}
         onSaveBusiness={handleSaveBackofficeBusiness}
         onDeleteBusiness={handleDeleteBackofficeBusiness}
+        onBusinessCreated={(business) => {
+          setBusinesses(previous => [business, ...previous.filter(item => item.id !== business.id)]);
+        }}
         session={backofficeSession}
         onExit={async () => {
           window.location.href = "https://webapp415008.ip-45-79-2-160.cloudezapp.io/";

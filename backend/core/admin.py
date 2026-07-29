@@ -4,6 +4,8 @@ from .models import (
     Advertiser,
     AdvertisingPlan,
     AdvertisingSubscription,
+    Advertisement,
+    AdvertisementMedia,
     Business,
     BusinessImage,
     Category,
@@ -248,3 +250,20 @@ class InvoiceAdmin(admin.ModelAdmin):
         "subscription__advertiser__name", "subscription__business__name",
         "description", "external_reference",
     )
+
+
+class AdvertisementMediaInline(admin.TabularInline):
+    model = AdvertisementMedia
+    extra = 0
+
+
+@admin.register(Advertisement)
+class AdvertisementAdmin(admin.ModelAdmin):
+    list_display = (
+        "title", "business", "status", "is_primary", "is_featured", "starts_at", "ends_at"
+    )
+    list_filter = ("status", "is_primary", "is_featured")
+    search_fields = ("title", "description", "business__name")
+    autocomplete_fields = ("business",)
+    filter_horizontal = ("tags",)
+    inlines = (AdvertisementMediaInline,)

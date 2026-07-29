@@ -83,6 +83,7 @@ export interface AdvertisingSubscription {
   advertiser_name: string;
   business: number;
   business_name: string;
+  advertisement: number | null;
   plan: number;
   plan_name: string;
   start_date: string;
@@ -111,6 +112,37 @@ export interface Invoice {
   payment_method: string;
   external_reference: string;
   notes: string;
+}
+
+export interface AdvertisementMedia {
+  id?: number;
+  media_type: "image" | "video";
+  file_data: string;
+  alt_text: string;
+  caption: string;
+  order: number;
+}
+
+export interface Advertisement {
+  id: number;
+  business: number;
+  business_name: string;
+  title: string;
+  short_description: string;
+  description: string;
+  call_to_action: string;
+  destination_url: string;
+  logo_image: string;
+  cover_image: string;
+  video_url: string;
+  tags: string[];
+  tag_names: string[];
+  media: AdvertisementMedia[];
+  starts_at: string | null;
+  ends_at: string | null;
+  status: "draft" | "review" | "published" | "paused" | "ended";
+  is_featured: boolean;
+  is_primary: boolean;
 }
 
 export interface FinanceSummary {
@@ -405,3 +437,9 @@ export const saveAdvertisingSubscription = (value: AdvertisingSubscription) =>
   saveResource("/api/backoffice/subscriptions/", value);
 export const saveInvoice = (value: Invoice) =>
   saveResource("/api/backoffice/invoices/", value);
+export const saveAdvertisement = (value: Advertisement) =>
+  saveResource("/api/backoffice/advertisements/", value);
+
+export async function loadAdvertisements() {
+  return request<Advertisement[]>("/api/backoffice/advertisements/");
+}

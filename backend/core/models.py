@@ -249,6 +249,67 @@ class AdvertisingPlan(models.Model):
         return self.name
 
 
+class Advertisement(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Rascunho"
+        REVIEW = "review", "Em revisao"
+        PUBLISHED = "published", "Publicado"
+        PAUSED = "paused", "Pausado"
+        ENDED = "ended", "Encerrado"
+
+    business = models.ForeignKey(
+        Business,
+        verbose_name="estabelecimento",
+        related_name="advertisements",
+        on_delete=models.CASCADE,
+    )
+    title = models.CharField("titulo", max_length=180)
+    short_description = models.CharField("chamada curta", max_length=240, blank=True)
+    description = models.TextField("texto do anuncio", blank=True)
+    call_to_action = models.CharField("chamada para acao", max_length=80, blank=True)
+    destination_url = models.URLField("link de destino", blank=True)
+    logo_image = models.TextField("logomarca", blank=True)
+    cover_image = models.TextField("imagem de capa", blank=True)
+    video_url = models.URLField("video", blank=True)
+    tags = models.ManyToManyField(Tag, related_name="advertisements", blank=True)
+    starts_at = models.DateField("inicio da publicacao", null=True, blank=True)
+    ends_at = models.DateField("fim da publicacao", null=True, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    is_featured = models.BooleanField("destaque", default=False)
+    is_primary = models.BooleanField("anuncio principal", default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-is_primary", "-updated_at")
+        verbose_name = "anuncio"
+        verbose_name_plural = "anuncios"
+
+    def __str__(self):
+        return f"{self.business} - {self.title}"
+
+
+class AdvertisementMedia(models.Model):
+    class MediaType(models.TextChoices):
+        IMAGE = "image", "Imagem"
+        VIDEO = "video", "Video"
+
+    advertisement = models.ForeignKey(
+        Advertisement, related_name="media", on_delete=models.CASCADE
+    )
+    media_type = models.CharField(max_length=10, choices=MediaType.choices, default=MediaType.IMAGE)
+    file_data = models.TextField("arquivo/URL")
+    alt_text = models.CharField("texto alternativo", max_length=180, blank=True)
+    caption = models.CharField("legenda", max_length=240, blank=True)
+    order = models.PositiveSmallIntegerField("ordem", default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("order", "id")
+        verbose_name = "midia do anuncio"
+        verbose_name_plural = "midias do anuncio"
+
+
 class AdvertisingSubscription(models.Model):
     class Status(models.TextChoices):
         ACTIVE = "active", "Ativa"
@@ -262,6 +323,14 @@ class AdvertisingSubscription(models.Model):
     )
     business = models.ForeignKey(
         Business, verbose_name="anuncio", related_name="subscriptions", on_delete=models.PROTECT
+    )
+    advertisement = models.ForeignKey(
+        Advertisement,
+        verbose_name="campanha/anuncio",
+        related_name="subscriptions",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
     )
     plan = models.ForeignKey(
         AdvertisingPlan, related_name="subscriptions", on_delete=models.PROTECT

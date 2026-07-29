@@ -23,11 +23,13 @@ import { Business } from "../types";
 import { BackofficeSession } from "../api";
 import { CATEGORIES, NEIGHBORHOODS } from "../data";
 import { FinanceBackoffice } from "./FinanceBackoffice";
+import { AdvertiserOnboarding } from "./AdvertiserOnboarding";
 
 interface BackofficeProps {
   businesses: Business[];
   onSaveBusiness: (business: Business) => Promise<void>;
   onDeleteBusiness: (business: Business) => Promise<void>;
+  onBusinessCreated: (business: Business) => void;
   onExit: () => void | Promise<void>;
   onLogout: () => void | Promise<void>;
   session: BackofficeSession;
@@ -163,9 +165,10 @@ function buildAddress(form: BusinessFormState) {
   return [streetLine, form.complement.trim()].filter(Boolean).join(" - ");
 }
 
-export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onExit, onLogout, session }: BackofficeProps) {
-  const [activeView, setActiveView] = useState<"list" | "form" | "finance">(() => {
+export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onBusinessCreated, onExit, onLogout, session }: BackofficeProps) {
+  const [activeView, setActiveView] = useState<"list" | "form" | "finance" | "onboarding">(() => {
     if (window.location.pathname.includes("/financeiro")) return "finance";
+    if (window.location.pathname.includes("/novo-anuncio")) return "onboarding";
     return window.location.pathname.includes("/cadastro") ? "form" : "list";
   });
   const [searchQuery, setSearchQuery] = useState("");
@@ -213,12 +216,9 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onExi
   }, [businesses]);
 
   const openNewForm = () => {
-    window.history.pushState({}, "", "/backoffice/cadastro");
-    setForm(emptyForm());
+    window.history.pushState({}, "", "/backoffice/novo-anuncio");
+    setActiveView("onboarding");
     setImageUploadError("");
-    setIsLogoDragging(false);
-    setIsGalleryDragging(false);
-    setActiveView("form");
   };
 
   const openEditForm = (business: Business) => {
@@ -498,7 +498,7 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onExi
               id="backoffice-new-business"
             >
               <PlusCircle className="h-4 w-4 text-amber-400" />
-              <span>Cadastrar estabelecimento</span>
+              <span>Novo anunciante e anuncio</span>
             </button>
           </div>
         </div>
@@ -545,14 +545,14 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onExi
               <button
                 onClick={openNewForm}
                 className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-semibold ${
-                  activeView === "form" && !form.id
+                  activeView === "onboarding"
                     ? "bg-stone-900 text-white"
                     : "border border-stone-200 text-stone-700 hover:bg-stone-50"
                 }`}
               >
                 <span className="inline-flex items-center gap-2">
                   <PlusCircle className="h-4 w-4" />
-                  Cadastrar
+                  Novo anunciante/anuncio
                 </span>
               </button>
               <button
@@ -593,6 +593,15 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onExi
         </aside>
 
         <section className="space-y-6">
+          {activeView === "onboarding" && (
+            <AdvertiserOnboarding
+              onCancel={closeForm}
+              onComplete={(business) => {
+                onBusinessCreated(business);
+                closeForm();
+              }}
+            />
+          )}
           {activeView === "finance" && <FinanceBackoffice businesses={businesses} />}
           {activeView === "list" && (
           <div className="rounded-lg border border-stone-200 bg-white p-4">

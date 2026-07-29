@@ -39,7 +39,7 @@ export function FinanceBackoffice({ businesses }: { businesses: Business[] }) {
     max_ads: 1, featured: false, is_active: true
   });
   const [subscriptionForm, setSubscriptionForm] = useState<AdvertisingSubscription>({
-    id: 0, advertiser: 0, advertiser_name: "", business: 0, business_name: "",
+    id: 0, advertiser: 0, advertiser_name: "", business: 0, business_name: "", advertisement: null,
     plan: 0, plan_name: "", start_date: today(), end_date: null, next_due_date: today(),
     agreed_price: "0.00", status: "active", auto_renew: true, notes: ""
   });
