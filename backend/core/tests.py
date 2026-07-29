@@ -180,6 +180,28 @@ class FinanceApiTests(TestCase):
             {"SorveteAraraquara", "SobremesaPerfeita", "VemPraLoja"},
         )
 
+    def test_staff_can_suspend_and_reactivate_business(self):
+        suspend_response = self.client.patch(
+            f"/api/backoffice/businesses/{self.business.slug}/",
+            {"status": Business.Status.SUSPENDED},
+            format="json",
+        )
+        self.assertEqual(suspend_response.status_code, 200, suspend_response.data)
+        self.business.refresh_from_db()
+        self.assertEqual(self.business.status, Business.Status.SUSPENDED)
+
+        public_response = APIClient().get("/api/businesses/")
+        self.assertNotIn(self.business.id, [item["id"] for item in public_response.data])
+
+        reactivate_response = self.client.patch(
+            f"/api/backoffice/businesses/{self.business.slug}/",
+            {"status": Business.Status.ACTIVE},
+            format="json",
+        )
+        self.assertEqual(reactivate_response.status_code, 200, reactivate_response.data)
+        self.business.refresh_from_db()
+        self.assertEqual(self.business.status, Business.Status.ACTIVE)
+
     def test_staff_user_can_register_push_subscription(self):
         response = self.client.post(
             "/api/backoffice/push/subscription/",

@@ -25,6 +25,7 @@ import {
   loginBackoffice,
   logoutBackoffice,
   saveBackofficeBusiness,
+  changeBackofficeBusinessStatus,
   BackofficeSession
 } from "./api";
 import { SlidersHorizontal, Sparkles, Building2, Store } from "lucide-react";
@@ -210,6 +211,16 @@ export default function App() {
     setBusinesses((previous) => previous.filter((item) => item.id !== business.id));
   };
 
+  const handleChangeBackofficeBusinessStatus = async (
+    business: Business,
+    status: NonNullable<Business["status"]>
+  ) => {
+    const savedBusiness = await changeBackofficeBusinessStatus(business, status);
+    setBusinesses((previous) =>
+      previous.map((item) => (item.id === savedBusiness.id ? savedBusiness : item))
+    );
+  };
+
   if (currentPath.startsWith("/backoffice")) {
     if (!isSessionChecked) {
       return (
@@ -250,6 +261,7 @@ export default function App() {
       <Backoffice
         businesses={businesses}
         onSaveBusiness={handleSaveBackofficeBusiness}
+        onChangeBusinessStatus={handleChangeBackofficeBusinessStatus}
         onDeleteBusiness={handleDeleteBackofficeBusiness}
         onBusinessCreated={(business) => {
           setBusinesses(previous => [business, ...previous.filter(item => item.id !== business.id)]);

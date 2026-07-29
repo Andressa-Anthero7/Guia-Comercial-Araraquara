@@ -24,7 +24,7 @@ export interface Business {
   logoImage?: string;
   images?: string[];
   isFeatured: boolean;
-  status?: "draft" | "pending" | "active" | "inactive";
+  status?: "draft" | "pending" | "active" | "suspended" | "inactive";
   hours: string; // e.g. "Seg - Sáb: 08:00 às 18:00"
   tags: string[];
 }

@@ -391,6 +391,22 @@ export async function saveBackofficeBusiness(business: Business) {
   return mapBusiness(item);
 }
 
+export async function changeBackofficeBusinessStatus(
+  business: Business,
+  status: NonNullable<Business["status"]>
+) {
+  if (!business.slug) throw new Error("Estabelecimento sem identificador.");
+  await ensureCsrf();
+  const item = await request<ApiBusiness>(
+    `/api/backoffice/businesses/${business.slug}/`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ status })
+    }
+  );
+  return mapBusiness(item);
+}
+
 export async function deleteBackofficeBusiness(business: Business) {
   if (!business.slug) throw new Error("Estabelecimento sem identificador.");
   await ensureCsrf();

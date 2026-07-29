@@ -31,6 +31,7 @@ import { parseTags } from "../utils/content";
 interface BackofficeProps {
   businesses: Business[];
   onSaveBusiness: (business: Business) => Promise<void>;
+  onChangeBusinessStatus: (business: Business, status: BusinessStatus) => Promise<void>;
   onDeleteBusiness: (business: Business) => Promise<void>;
   onBusinessCreated: (business: Business) => void;
   onExit: () => void | Promise<void>;
@@ -66,9 +67,10 @@ interface BusinessFormState {
 }
 
 const STATUS_OPTIONS: Array<{ value: BusinessStatus; label: string }> = [
-  { value: "active", label: "Publicado" },
+  { value: "active", label: "Ativo / publicado" },
   { value: "pending", label: "Pendente" },
   { value: "draft", label: "Rascunho" },
+  { value: "suspended", label: "Suspenso" },
   { value: "inactive", label: "Inativo" }
 ];
 
@@ -145,15 +147,12 @@ function businessToForm(business: Business): BusinessFormState {
   };
 }
 
-function statusLabel(status: BusinessStatus) {
-  return STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status;
-}
-
 function statusClass(status: BusinessStatus) {
   const classes: Record<BusinessStatus, string> = {
     active: "bg-emerald-50 text-emerald-700 border-emerald-200",
     pending: "bg-amber-50 text-amber-700 border-amber-200",
     draft: "bg-stone-50 text-stone-600 border-stone-200",
+    suspended: "bg-orange-50 text-orange-700 border-orange-200",
     inactive: "bg-rose-50 text-rose-700 border-rose-200"
   };
   return classes[status];
@@ -168,7 +167,7 @@ function buildAddress(form: BusinessFormState) {
   return [streetLine, form.complement.trim()].filter(Boolean).join(" - ");
 }
 
-export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onBusinessCreated, onExit, onLogout, session }: BackofficeProps) {
+export function Backoffice({ businesses, onSaveBusiness, onChangeBusinessStatus, onDeleteBusiness, onBusinessCreated, onExit, onLogout, session }: BackofficeProps) {
   const [activeView, setActiveView] = useState<"list" | "form" | "finance" | "onboarding" | "commercial">(() => {
     if (window.location.pathname.includes("/financeiro")) return "finance";
     if (window.location.pathname.includes("/comercial")) return "commercial";
@@ -181,6 +180,7 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onBus
   const [isLogoDragging, setIsLogoDragging] = useState(false);
   const [isGalleryDragging, setIsGalleryDragging] = useState(false);
   const [imageUploadError, setImageUploadError] = useState("");
+  const [changingStatusId, setChangingStatusId] = useState("");
   const [onboardingAdvertiserId, setOnboardingAdvertiserId] = useState(0);
   const [onboardingBusiness, setOnboardingBusiness] = useState<Business | null>(null);
   const [onboardingAdvertisement, setOnboardingAdvertisement] = useState<Advertisement | null>(null);
@@ -218,7 +218,7 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onBus
         summary.featured += business.isFeatured ? 1 : 0;
         return summary;
       },
-      { total: 0, active: 0, pending: 0, draft: 0, inactive: 0, featured: 0 }
+      { total: 0, active: 0, pending: 0, draft: 0, suspended: 0, inactive: 0, featured: 0 }
     );
   }, [businesses]);
 
@@ -413,6 +413,26 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onBus
     if (form.id === business.id) {
       setForm(emptyForm());
       setActiveView("list");
+    }
+  };
+
+  const changeBusinessStatus = async (business: Business, status: BusinessStatus) => {
+    const currentStatus = getBusinessStatus(business);
+    if (status === currentStatus || changingStatusId) return;
+    if (
+      (status === "suspended" || status === "inactive") &&
+      !window.confirm(
+        `${status === "suspended" ? "Suspender" : "Inativar"} “${business.name}”? O estabelecimento deixará de aparecer no guia público.`
+      )
+    ) return;
+
+    setChangingStatusId(business.id);
+    try {
+      await onChangeBusinessStatus(business, status);
+    } catch (reason) {
+      window.alert(reason instanceof Error ? reason.message : "Não foi possível alterar o status.");
+    } finally {
+      setChangingStatusId("");
     }
   };
 
@@ -739,12 +759,49 @@ export function Backoffice({ businesses, onSaveBusiness, onDeleteBusiness, onBus
                           </div>
                         </td>
                         <td className="px-3 py-3">
-                          <span className={`inline-flex rounded-md border px-2 py-1 text-xs font-bold ${statusClass(currentStatus)}`}>
-                            {statusLabel(currentStatus)}
-                          </span>
+                          <div className="min-w-40 space-y-1.5">
+                            <select
+                              value={currentStatus}
+                              disabled={changingStatusId === business.id}
+                              onChange={(event) => void changeBusinessStatus(business, event.target.value as BusinessStatus)}
+                              className={`h-9 w-full rounded-md border px-2 text-xs font-bold outline-none disabled:cursor-wait disabled:opacity-60 ${statusClass(currentStatus)}`}
+                              aria-label={`Status de ${business.name}`}
+                            >
+                              {STATUS_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="text-[10px] font-medium text-stone-500">
+                              {changingStatusId === business.id ? "Atualizando..." : "Alteração aplicada imediatamente"}
+                            </div>
+                          </div>
                         </td>
                         <td className="px-3 py-3">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex flex-wrap justify-end gap-2">
+                            {currentStatus !== "active" && (
+                              <button
+                                disabled={changingStatusId === business.id}
+                                onClick={() => void changeBusinessStatus(business, "active")}
+                                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-emerald-200 px-3 text-xs font-bold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+                                title="Liberar no guia"
+                              >
+                                <CheckCircle2 className="h-4 w-4" />
+                                Publicar
+                              </button>
+                            )}
+                            {currentStatus === "active" && (
+                              <button
+                                disabled={changingStatusId === business.id}
+                                onClick={() => void changeBusinessStatus(business, "suspended")}
+                                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-orange-200 px-3 text-xs font-bold text-orange-700 hover:bg-orange-50 disabled:opacity-50"
+                                title="Suspender publicação"
+                              >
+                                <XCircle className="h-4 w-4" />
+                                Suspender
+                              </button>
+                            )}
                             <button
                               onClick={() => openEditForm(business)}
                               className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-stone-200 text-stone-700 hover:bg-stone-50"

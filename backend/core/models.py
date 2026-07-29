@@ -67,6 +67,7 @@ class Business(models.Model):
         DRAFT = "draft", "Rascunho"
         PENDING = "pending", "Pendente"
         ACTIVE = "active", "Publicado"
+        SUSPENDED = "suspended", "Suspenso"
         INACTIVE = "inactive", "Inativo"
 
     category = models.ForeignKey(
