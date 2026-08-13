@@ -1,7 +1,11 @@
+import base64
+
 from django.contrib.auth import authenticate, login, logout
 from datetime import timedelta
 import os
 from django.db.models import Q, Sum
+from django.http import HttpResponse
+from django.shortcuts import redirect
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import mixins, status, viewsets
@@ -215,6 +219,25 @@ class BusinessViewSet(
             ).distinct()
 
         return queryset
+
+    @action(detail=True, methods=["get"], url_path="cover")
+    def cover(self, request, slug=None):
+        """Entrega capas Base64 como imagem separada e cacheavel."""
+        business = self.get_object()
+        image_url = business.image_url or ""
+        if not image_url:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        if not image_url.startswith("data:"):
+            return redirect(image_url)
+        try:
+            header, encoded_image = image_url.split(",", 1)
+            content_type = header[5:].split(";", 1)[0] or "image/jpeg"
+            image_data = base64.b64decode(encoded_image, validate=True)
+        except (ValueError, base64.binascii.Error):
+            return Response({"detail": "Imagem invalida."}, status=status.HTTP_404_NOT_FOUND)
+        response = HttpResponse(image_data, content_type=content_type)
+        response["Cache-Control"] = "public, max-age=3600"
+        return response
 
 
 class BackofficeBusinessViewSet(viewsets.ModelViewSet):

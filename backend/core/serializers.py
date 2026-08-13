@@ -66,7 +66,10 @@ class BusinessSerializer(serializers.ModelSerializer):
     full_address = serializers.CharField(read_only=True)
     rating = serializers.FloatField(source="average_rating", read_only=True)
     reviews_count = serializers.IntegerField(read_only=True)
-    images = BusinessImageSerializer(many=True, read_only=True)
+    # A listagem publica nao deve carregar imagens Base64 junto ao JSON.
+    # A capa e servida pela rota dedicada e cacheavel.
+    image_url = serializers.SerializerMethodField(read_only=True)
+    images = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Business
@@ -124,6 +127,17 @@ class BusinessSerializer(serializers.ModelSerializer):
 
     def get_tag_names(self, obj):
         return [tag.name for tag in obj.tags.all()]
+
+    def get_image_url(self, obj):
+        image_url = obj.image_url or ""
+        if not image_url.startswith("data:"):
+            return image_url
+        request = self.context.get("request")
+        path = f"/api/businesses/{obj.slug}/cover/"
+        return request.build_absolute_uri(path) if request else path
+
+    def get_images(self, obj):
+        return []
 
 
 class BackofficeBusinessSerializer(serializers.ModelSerializer):

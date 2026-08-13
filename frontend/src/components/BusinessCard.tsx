@@ -30,6 +30,7 @@ export function BusinessCard({ business, onOpenDetails }: BusinessCardProps) {
         <img
           src={coverImage}
           alt={business.name}
+          loading="lazy"
           className={`h-full w-full transition-transform duration-500 group-hover:scale-105 ${
             business.imageDisplay === "full" ? "object-contain" : "object-cover"
           }`}
