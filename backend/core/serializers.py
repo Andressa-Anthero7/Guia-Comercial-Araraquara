@@ -75,6 +75,9 @@ class BusinessSerializer(serializers.ModelSerializer):
             "name",
             "slug",
             "description",
+            "services_products",
+            "plan_type",
+            "public_subdomain",
             "category",
             "category_name",
             "street",
@@ -102,7 +105,7 @@ class BusinessSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("slug", "status", "is_featured", "created_at", "updated_at")
+        read_only_fields = ("slug", "status", "is_featured", "plan_type", "public_subdomain", "meta_pixel_id", "google_analytics_id", "google_ads_id", "created_at", "updated_at")
 
     def create(self, validated_data):
         tag_names = validated_data.pop("tags", [])
@@ -155,6 +158,12 @@ class BackofficeBusinessSerializer(serializers.ModelSerializer):
             "name",
             "slug",
             "description",
+            "services_products",
+            "plan_type",
+            "public_subdomain",
+            "meta_pixel_id",
+            "google_analytics_id",
+            "google_ads_id",
             "category",
             "category_name",
             "street",
@@ -191,6 +200,35 @@ class BackofficeBusinessSerializer(serializers.ModelSerializer):
 
     def validate_tags(self, value):
         return normalize_tag_names(value)
+
+    def validate(self, attrs):
+        plan_type = attrs.get("plan_type", getattr(self.instance, "plan_type", Business.PlanType.FREE))
+        paid_only = ("public_subdomain", "meta_pixel_id", "google_analytics_id", "google_ads_id")
+        paid_values = {
+            field: attrs.get(field, getattr(self.instance, field, ""))
+            for field in paid_only
+        }
+        if plan_type != Business.PlanType.PAID and any(paid_values.values()):
+            raise serializers.ValidationError({"plan_type": "Subdominio e integracoes de marketing sao exclusivos do plano pago."})
+        images = attrs.get("images")
+        if images is not None:
+            limit = 5 if plan_type == Business.PlanType.PAID else 1
+            if len(images) > limit:
+                raise serializers.ValidationError({"images": f"O plano permite no maximo {limit} imagem(ns)."})
+        return attrs
+
+    def validate_public_subdomain(self, value):
+        subdomain = value.strip().lower()
+        if not subdomain:
+            return ""
+        if subdomain in {"www", "api", "admin", "backoffice", "mail"}:
+            raise serializers.ValidationError("Este subdominio e reservado.")
+        queryset = Business.objects.filter(public_subdomain__iexact=subdomain)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise serializers.ValidationError("Este endereco ja esta em uso por outra empresa.")
+        return subdomain
 
     def create(self, validated_data):
         tag_names = validated_data.pop("tags", [])
@@ -299,6 +337,11 @@ class BackofficeCouponSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("created_at",)
 
+    def validate_business(self, business):
+        if business.plan_type != Business.PlanType.PAID:
+            raise serializers.ValidationError("Cupons sao um beneficio exclusivo do plano pago.")
+        return business
+
 
 class EventSerializer(serializers.ModelSerializer):
     class Meta:
@@ -366,8 +409,8 @@ class AdvertisingPlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdvertisingPlan
         fields = (
-            "id", "name", "description", "price", "billing_cycle", "max_ads",
-            "featured", "is_active", "created_at", "updated_at",
+            "id", "name", "description", "price", "billing_cycle", "max_ads", "plan_type", "max_images",
+            "featured", "includes_coupons", "includes_marketing", "includes_custom_page", "is_active", "created_at", "updated_at",
         )
         read_only_fields = ("created_at", "updated_at")
 
@@ -419,6 +462,15 @@ class AdvertisementSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"ends_at": "O fim da publicacao deve ser posterior ao inicio."}
             )
+        business = attrs.get("business", getattr(self.instance, "business", None))
+        media = attrs.get("media")
+        if business and media is not None:
+            images = [item for item in media if item.get("media_type", "image") == AdvertisementMedia.MediaType.IMAGE]
+            limit = 5 if business.plan_type == Business.PlanType.PAID else 1
+            if len(images) > limit:
+                raise serializers.ValidationError({"media": f"O plano {business.get_plan_type_display().lower()} permite no maximo {limit} imagem(ns)."})
+        if business and attrs.get("is_featured", False) and business.plan_type != Business.PlanType.PAID:
+            raise serializers.ValidationError({"is_featured": "Destaque e exclusivo para anunciantes pagos."})
         return attrs
 
     def get_tag_names(self, obj):

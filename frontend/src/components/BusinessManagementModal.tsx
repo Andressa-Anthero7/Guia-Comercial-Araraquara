@@ -17,6 +17,7 @@ interface Props {
 }
 
 const PUBLIC_PORTAL_ORIGIN = "https://www.guiacomararaquara.com.br";
+const PUBLIC_DOMAIN = "guiacomararaquara.com.br";
 const statusOptions: Array<{ value: BusinessStatus; label: string }> = [
   { value: "active", label: "Ativo / publicado" },
   { value: "pending", label: "Pendente" },
@@ -30,6 +31,9 @@ const adStatus: Record<Advertisement["status"], string> = {
 };
 
 function publicUrl(business: Business) {
+  if (business.publicSubdomain) {
+    return `https://${business.publicSubdomain}.${PUBLIC_DOMAIN}`;
+  }
   return `${PUBLIC_PORTAL_ORIGIN}/?empresa=${encodeURIComponent(business.slug ?? business.id)}`;
 }
 

@@ -60,6 +60,11 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
   const [commercial, setCommercial] = useState({
     planId: 0, price: "0.00", nextDueDate: now(), autoRenew: true, notes: ""
   });
+  const [marketing, setMarketing] = useState({ subdomain: existingBusiness?.publicSubdomain ?? "", metaPixelId: existingBusiness?.metaPixelId ?? "", googleAnalyticsId: existingBusiness?.googleAnalyticsId ?? "", googleAdsId: existingBusiness?.googleAdsId ?? "" });
+  const selectedPlan = plans.find((plan) => plan.id === commercial.planId);
+  const isPaidPlan = existingBusiness?.planType === "paid" || selectedPlan?.plan_type === "paid";
+  const allowsCustomPage = isPaidPlan && (selectedPlan?.includes_custom_page ?? true);
+  const maxImages = isPaidPlan ? Math.min(selectedPlan?.max_images ?? 5, 5) : 1;
 
   useEffect(() => {
     loadFinanceData()
@@ -77,19 +82,35 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
   };
 
   const addPhotos = async (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from<File>(event.target.files ?? []).slice(0, 10 - ad.photos.length);
+    const files = Array.from<File>(event.target.files ?? []).slice(0, maxImages - ad.photos.length);
     try {
       const photos: string[] = [];
       for (const file of files) photos.push(await optimizeImageFile(file));
       setAd(current => ({
         ...current,
-        photos: [...current.photos, ...photos].slice(0, 10),
+        photos: [...current.photos, ...photos].slice(0, maxImages),
         coverImage: current.coverImage || photos[0] || ""
       }));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Nao foi possivel carregar as fotos.");
     }
     event.target.value = "";
+  };
+
+  const selectPlan = (planId: number) => {
+    const plan = plans.find((item) => item.id === planId);
+    const paid = existingBusiness?.planType === "paid" || plan?.plan_type === "paid";
+    const imageLimit = paid ? Math.min(plan?.max_images ?? 5, 5) : 1;
+    setCommercial((current) => ({ ...current, planId, price: plan?.price ?? "0.00" }));
+    setAd((current) => ({
+      ...current,
+      featured: paid ? current.featured : false,
+      photos: current.photos.slice(0, imageLimit),
+      coverImage: current.photos.slice(0, imageLimit)[0] || current.coverImage,
+    }));
+    if (!paid || plan?.includes_custom_page === false) {
+      setMarketing((current) => ({ ...current, subdomain: "", metaPixelId: "", googleAnalyticsId: "", googleAdsId: "" }));
+    }
   };
 
   const finish = async (event: FormEvent) => {
@@ -100,10 +121,16 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
       let owner = advertisers.find(item => item.id === existingAdvertiserId);
       if (!owner) owner = await saveAdvertiser(advertiser);
 
-      const business = existingBusiness ?? await saveBackofficeBusiness({
-        id: `new-${Date.now()}`,
+      const businessDraft: Business = {
+        ...(existingBusiness ?? { id: `new-${Date.now()}` }),
         name: establishment.name.trim(),
         description: ad.description.trim(),
+        servicesProducts: ad.description.trim(),
+        planType: isPaidPlan ? "paid" : "free",
+        publicSubdomain: allowsCustomPage ? marketing.subdomain.trim().toLowerCase() : "",
+        metaPixelId: allowsCustomPage ? marketing.metaPixelId.trim() : "",
+        googleAnalyticsId: allowsCustomPage ? marketing.googleAnalyticsId.trim() : "",
+        googleAdsId: allowsCustomPage ? marketing.googleAdsId.trim() : "",
         category: establishment.category,
         address: `${establishment.street}, ${establishment.number}`,
         street: establishment.street,
@@ -127,7 +154,8 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
         status: ad.status === "published" ? "active" : "pending",
         hours: establishment.hours,
         tags: parseTags(ad.tags)
-      });
+      };
+      const business = await saveBackofficeBusiness(businessDraft);
 
       if (!owner.businesses.includes(Number(business.id))) {
         owner = await saveAdvertiser({
@@ -248,6 +276,12 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
         <h3 className="mb-1 flex items-center gap-2 text-lg font-extrabold"><ImagePlus className="h-5 w-5 text-amber-500"/>Conteudo do anuncio</h3>
         <p className="mb-4 text-sm text-stone-500">Fotos, textos e campanha promocional, separados dos dados do estabelecimento.</p>
         <div className="grid gap-3 md:grid-cols-2">
+          <label className="text-xs font-bold text-stone-500 md:col-span-2">Plano do anuncio
+            <select className={`${inputClass} mt-1 w-full`} value={commercial.planId} onChange={e=>selectPlan(Number(e.target.value))}>
+              <option value={0}>Cadastro gratuito - 1 imagem</option>
+              {plans.filter(item => item.is_active).map(item=><option key={item.id} value={item.id}>{item.name} - R$ {item.price}</option>)}
+            </select>
+          </label>
           <input required className={inputClass} placeholder="Titulo do anuncio" value={ad.title} onChange={e=>setAd({...ad,title:e.target.value})}/>
           <input className={inputClass} placeholder="Chamada curta" value={ad.shortDescription} onChange={e=>setAd({...ad,shortDescription:e.target.value})}/>
           <textarea required className="min-h-32 rounded-lg border border-stone-200 p-3 text-sm md:col-span-2" placeholder="Descricao completa" value={ad.description} onChange={e=>setAd({...ad,description:e.target.value})}/>
@@ -255,7 +289,7 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
           <input className={inputClass} placeholder="Link do botao" value={ad.destinationUrl} onChange={e=>setAd({...ad,destinationUrl:e.target.value})}/>
           <input className={inputClass} placeholder="URL do video (YouTube/Instagram)" value={ad.videoUrl} onChange={e=>setAd({...ad,videoUrl:e.target.value})}/>
           <input className={inputClass} placeholder="Tags separadas por virgula" value={ad.tags} onChange={e=>setAd({...ad,tags:e.target.value})}/>
-          <label className="rounded-lg border-2 border-dashed border-stone-200 p-4 text-center text-sm font-bold md:col-span-2">Adicionar fotos (ate 10)<input type="file" accept="image/*" multiple className="mt-2 block w-full text-xs" onChange={e=>void addPhotos(e)}/></label>
+          <label className="rounded-lg border-2 border-dashed border-stone-200 p-4 text-center text-sm font-bold md:col-span-2">Adicionar fotos ({isPaidPlan ? `ate ${maxImages} no plano pago` : "1 capa no plano gratuito"})<input type="file" accept="image/*" multiple={isPaidPlan} className="mt-2 block w-full text-xs" onChange={e=>void addPhotos(e)}/></label>
           {!!ad.photos.length && <div className="flex flex-wrap gap-2 md:col-span-2">{ad.photos.map((photo,index)=><img key={index} src={photo} className="h-20 w-20 rounded-md object-cover"/>)}</div>}
         </div>
         <WizardNavigation back={()=>existingBusiness ? (initialAdvertiserId ? onCancel() : setStep(1)) : setStep(2)}/>
@@ -271,9 +305,19 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
           <label className="text-xs font-bold text-stone-500">Fim da publicacao<input type="date" className={`${inputClass} mt-1 w-full`} value={ad.endsAt} onChange={e=>setAd({...ad,endsAt:e.target.value})}/></label>
           <label className="text-xs font-bold text-stone-500">Proximo vencimento<input type="date" className={`${inputClass} mt-1 w-full`} value={commercial.nextDueDate} onChange={e=>setCommercial({...commercial,nextDueDate:e.target.value})}/></label>
           <select className={inputClass} value={ad.status} onChange={e=>setAd({...ad,status:e.target.value as Advertisement["status"]})}><option value="draft">Salvar como rascunho</option><option value="review">Enviar para revisao</option><option value="published">Publicar agora</option></select>
-          <label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" checked={ad.featured} onChange={e=>setAd({...ad,featured:e.target.checked})}/>Destaque no guia</label>
+          <label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" disabled={!isPaidPlan} checked={ad.featured} onChange={e=>setAd({...ad,featured:e.target.checked})}/>Destaque no guia {!isPaidPlan && <span className="text-xs font-normal text-stone-500">(plano pago)</span>}</label>
           <label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" checked={commercial.autoRenew} onChange={e=>setCommercial({...commercial,autoRenew:e.target.checked})}/>Renovacao automatica</label>
         </div>
+        {allowsCustomPage && <section className="mt-5 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <h4 className="font-extrabold text-blue-950">Pagina personalizada do cliente</h4>
+          <p className="mt-1 text-xs text-blue-800">Use letras minusculas, numeros e hifens. O endereco sera <b>nome.guiacomararaquara.com.br</b>.</p>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <label className="text-xs font-bold text-stone-600">Endereco da pagina<input required className={`${inputClass} mt-1 w-full`} placeholder="ex.: pizzaria-do-joao" value={marketing.subdomain} onChange={e=>setMarketing({...marketing,subdomain:e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")})}/></label>
+            <label className="text-xs font-bold text-stone-600">Meta Pixel (opcional)<input className={`${inputClass} mt-1 w-full`} placeholder="ex.: 123456789" value={marketing.metaPixelId} onChange={e=>setMarketing({...marketing,metaPixelId:e.target.value})}/></label>
+            <label className="text-xs font-bold text-stone-600">Google Analytics (opcional)<input className={`${inputClass} mt-1 w-full`} placeholder="ex.: G-XXXXXXXXXX" value={marketing.googleAnalyticsId} onChange={e=>setMarketing({...marketing,googleAnalyticsId:e.target.value})}/></label>
+            <label className="text-xs font-bold text-stone-600">Google Ads (opcional)<input className={`${inputClass} mt-1 w-full`} placeholder="ex.: AW-XXXXXXXXX" value={marketing.googleAdsId} onChange={e=>setMarketing({...marketing,googleAdsId:e.target.value})}/></label>
+          </div>
+        </section>}
         <div className="mt-5 rounded-lg bg-stone-50 p-4 text-sm"><b>{advertisers.find(item=>item.id===existingAdvertiserId)?.name || advertiser.name}</b> → <b>{establishment.name}</b> → {ad.title}</div>
         <div className="mt-5 grid grid-cols-2 gap-2"><button type="button" onClick={()=>setStep(3)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-bold"><ArrowLeft className="h-4 w-4"/>Voltar</button><button disabled={saving} className="min-h-10 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white disabled:opacity-50">{saving?"Salvando...":"Concluir cadastro"}</button></div>
       </form>}

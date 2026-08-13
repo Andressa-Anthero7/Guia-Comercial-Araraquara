@@ -63,6 +63,9 @@ class Tag(models.Model):
 
 
 class Business(models.Model):
+    class PlanType(models.TextChoices):
+        FREE = "free", "Gratuito"
+        PAID = "paid", "Pago"
     class Status(models.TextChoices):
         DRAFT = "draft", "Rascunho"
         PENDING = "pending", "Pendente"
@@ -83,6 +86,12 @@ class Business(models.Model):
     name = models.CharField("nome do estabelecimento", max_length=160)
     slug = models.SlugField("slug", max_length=180, unique=True, blank=True)
     description = models.TextField("descricao", blank=True)
+    services_products = models.TextField("servicos e produtos", blank=True)
+    plan_type = models.CharField("modalidade", max_length=12, choices=PlanType.choices, default=PlanType.FREE)
+    public_subdomain = models.SlugField("subdominio da pagina", max_length=80, blank=True)
+    meta_pixel_id = models.CharField("Meta Pixel", max_length=80, blank=True)
+    google_analytics_id = models.CharField("Google Analytics", max_length=80, blank=True)
+    google_ads_id = models.CharField("Google Ads", max_length=80, blank=True)
 
     street = models.CharField("rua", max_length=180)
     number = models.CharField("numero", max_length=20)
@@ -111,6 +120,13 @@ class Business(models.Model):
         verbose_name = "estabelecimento"
         verbose_name_plural = "estabelecimentos"
         ordering = ["-is_featured", "name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["public_subdomain"],
+                condition=~models.Q(public_subdomain=""),
+                name="unique_non_empty_business_public_subdomain",
+            )
+        ]
         indexes = [
             models.Index(fields=["status", "is_featured"]),
             models.Index(fields=["city", "neighborhood"]),
@@ -146,6 +162,8 @@ class Business(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = make_unique_slug(self, self.name)
+
+        self.public_subdomain = self.public_subdomain.strip().lower()
 
         if self.status == self.Status.ACTIVE and self.published_at is None:
             self.published_at = timezone.now()
@@ -223,6 +241,9 @@ class Advertiser(models.Model):
 
 
 class AdvertisingPlan(models.Model):
+    class PlanType(models.TextChoices):
+        FREE = "free", "Gratuito"
+        PAID = "paid", "Pago"
     class BillingCycle(models.TextChoices):
         MONTHLY = "monthly", "Mensal"
         QUARTERLY = "quarterly", "Trimestral"
@@ -236,7 +257,12 @@ class AdvertisingPlan(models.Model):
         "ciclo", max_length=20, choices=BillingCycle.choices, default=BillingCycle.MONTHLY
     )
     max_ads = models.PositiveSmallIntegerField("limite de anuncios", default=1)
+    plan_type = models.CharField("tipo", max_length=12, choices=PlanType.choices, default=PlanType.PAID)
+    max_images = models.PositiveSmallIntegerField("limite de imagens", default=5)
     featured = models.BooleanField("inclui destaque", default=False)
+    includes_coupons = models.BooleanField("inclui cupons", default=True)
+    includes_marketing = models.BooleanField("inclui apoio de marketing", default=True)
+    includes_custom_page = models.BooleanField("inclui pagina personalizada", default=True)
     is_active = models.BooleanField("ativo", default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -33,6 +33,7 @@ class FinanceApiTests(TestCase):
             street="Rua Teste",
             number="10",
             phone_whatsapp="16999999999",
+            plan_type=Business.PlanType.PAID,
         )
         self.advertiser = Advertiser.objects.create(
             name="Anunciante Teste",
@@ -179,6 +180,45 @@ class FinanceApiTests(TestCase):
             set(Business.objects.get(pk=response.data["id"]).tags.values_list("name", flat=True)),
             {"SorveteAraraquara", "SobremesaPerfeita", "VemPraLoja"},
         )
+
+    def test_paid_business_subdomain_must_be_unique(self):
+        self.business.public_subdomain = "anuncio-teste"
+        self.business.save()
+
+        response = self.client.post(
+            "/api/backoffice/businesses/",
+            {
+                "name": "Outro Anunciante",
+                "description": "Perfil comercial com pagina personalizada.",
+                "street": "Rua Dois",
+                "number": "20",
+                "phone_whatsapp": "16988888888",
+                "plan_type": Business.PlanType.PAID,
+                "public_subdomain": "anuncio-teste",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("public_subdomain", response.data)
+
+    def test_free_business_cannot_receive_premium_subdomain(self):
+        response = self.client.post(
+            "/api/backoffice/businesses/",
+            {
+                "name": "Cadastro Gratuito",
+                "description": "Cadastro sem beneficios de publicidade.",
+                "street": "Rua Tres",
+                "number": "30",
+                "phone_whatsapp": "16977777777",
+                "plan_type": Business.PlanType.FREE,
+                "public_subdomain": "cadastro-gratuito",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("plan_type", response.data)
 
     def test_staff_can_suspend_and_reactivate_business(self):
         suspend_response = self.client.patch(

@@ -148,6 +148,25 @@ def finance_summary(request):
     })
 
 
+@api_view(["GET"])
+def advertiser_portal(request):
+    """Self-service data for the authenticated advertiser linked to the account."""
+    if not request.user.is_authenticated:
+        return Response({"detail": "Autenticacao necessaria."}, status=status.HTTP_401_UNAUTHORIZED)
+    advertiser = Advertiser.objects.filter(user=request.user, status=Advertiser.Status.ACTIVE).first()
+    if not advertiser:
+        return Response({"detail": "Nenhum perfil de anunciante vinculado a este usuario."}, status=status.HTTP_404_NOT_FOUND)
+    businesses = advertiser.businesses.prefetch_related("advertisements", "coupons")
+    return Response({
+        "advertiser": AdvertiserSerializer(advertiser).data,
+        "businesses": BackofficeBusinessSerializer(businesses, many=True).data,
+        "advertisements": AdvertisementSerializer(Advertisement.objects.filter(business__in=businesses), many=True).data,
+        "coupons": CouponSerializer(Coupon.objects.filter(business__in=businesses), many=True).data,
+        "subscriptions": AdvertisingSubscriptionSerializer(AdvertisingSubscription.objects.filter(advertiser=advertiser), many=True).data,
+        "invoices": InvoiceSerializer(Invoice.objects.filter(subscription__advertiser=advertiser), many=True).data,
+    })
+
+
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.filter(is_active=True)
     serializer_class = CategorySerializer

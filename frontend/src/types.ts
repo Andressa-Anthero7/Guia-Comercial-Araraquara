@@ -3,6 +3,12 @@ export interface Business {
   slug?: string;
   name: string;
   description: string;
+  servicesProducts?: string;
+  planType?: "free" | "paid";
+  publicSubdomain?: string;
+  metaPixelId?: string;
+  googleAnalyticsId?: string;
+  googleAdsId?: string;
   category: string; // e.g. "gastronomia", "servicos", "saude", "lojas", "automotivo"
   address: string;
   street?: string;

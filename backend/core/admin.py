@@ -42,7 +42,7 @@ class BusinessImageInline(admin.TabularInline):
     model = BusinessImage
     extra = 0
     fields = ("order", "image", "alt_text")
-    max_num = 10
+    max_num = 5
 
 
 @admin.register(Category)
@@ -70,11 +70,12 @@ class BusinessAdmin(admin.ModelAdmin):
         "phone_whatsapp",
         "email",
         "status",
+        "plan_type",
         "is_featured",
         "updated_at",
     )
     list_editable = ("status", "is_featured")
-    list_filter = ("status", "is_featured", "category", "city", "neighborhood")
+    list_filter = ("status", "plan_type", "is_featured", "category", "city", "neighborhood")
     search_fields = (
         "name",
         "description",
@@ -107,6 +108,8 @@ class BusinessAdmin(admin.ModelAdmin):
                     "category",
                     "tags",
                     "description",
+                    "services_products",
+                    "plan_type",
                     "logo_image",
                     "image_url",
                     "is_featured",
@@ -138,6 +141,10 @@ class BusinessAdmin(admin.ModelAdmin):
                     "website",
                     "instagram",
                     "opening_hours",
+                    "public_subdomain",
+                    "meta_pixel_id",
+                    "google_analytics_id",
+                    "google_ads_id",
                 )
             },
         ),
@@ -226,7 +233,7 @@ class AdvertiserAdmin(admin.ModelAdmin):
 
 @admin.register(AdvertisingPlan)
 class AdvertisingPlanAdmin(admin.ModelAdmin):
-    list_display = ("name", "price", "billing_cycle", "max_ads", "featured", "is_active")
+    list_display = ("name", "plan_type", "price", "billing_cycle", "max_ads", "max_images", "featured", "is_active")
     list_editable = ("price", "is_active")
     list_filter = ("billing_cycle", "featured", "is_active")
     search_fields = ("name", "description")

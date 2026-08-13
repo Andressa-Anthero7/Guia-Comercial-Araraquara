@@ -100,3 +100,62 @@ python manage.py check
 python manage.py test
 python manage.py migrate
 ```
+
+### Páginas de clientes por subdomínio
+
+Empresas do plano pago podem receber uma página própria, por exemplo:
+
+```text
+https://pizzaria-do-joao.guiacomararaquara.com.br
+```
+
+No backoffice, selecione um plano pago que inclua página personalizada e informe
+somente o prefixo (`pizzaria-do-joao`). O sistema impede nomes reservados e
+endereços repetidos.
+
+Antes de publicar, configure no provedor do domínio um registro DNS curinga
+(`*.guiacomararaquara.com.br`) apontando para a mesma hospedagem do frontend do
+guia. Essa hospedagem deve responder qualquer subdomínio com o `index.html` da
+aplicação (fallback de SPA) e possuir certificado HTTPS que cubra o wildcard.
+
+No backend de produção, inclua o domínio curinga nas variáveis de ambiente:
+
+```text
+DJANGO_ALLOWED_HOSTS=webapp415078.ip-45-79-2-160.cloudezapp.io,.guiacomararaquara.com.br
+DJANGO_CORS_ALLOWED_ORIGIN_REGEXES=^https://([a-z0-9-]+\.)?guiacomararaquara\.com\.br$
+```
+
+### Teste local de subdomínios
+
+Sem alterar DNS público, abra dois terminais:
+
+```powershell
+# terminal 1
+cd backend
+$env:DJANGO_CORS_ALLOWED_ORIGIN_REGEXES='^http://([a-z0-9-]+\.)?localhost(:3000)?$'
+.\gca_venv\Scripts\python.exe manage.py runserver
+```
+
+```powershell
+# terminal 2
+cd frontend
+npm run dev
+```
+
+No backoffice local, crie uma empresa publicada, de plano pago, com o endereço
+`pizzaria-do-joao`. Para testar imediatamente, acesse:
+
+```text
+http://localhost:3000/?subdomain=pizzaria-do-joao
+```
+
+Para testar também pelo endereço idêntico ao de produção, abra o Bloco de Notas
+como administrador e adicione esta linha ao arquivo
+`C:\Windows\System32\drivers\etc\hosts`:
+
+```text
+127.0.0.1 pizzaria-do-joao.localhost
+```
+
+Então abra `http://pizzaria-do-joao.localhost:3000`. Remova essa linha após o
+teste. Em produção, o DNS curinga substitui esse mapeamento local.

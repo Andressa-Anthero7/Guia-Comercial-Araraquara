@@ -1,14 +1,22 @@
 import { Business, Coupon, Event, Review, UsefulNumber } from "./types";
 
 const BACKEND_ORIGIN = "https://webapp415078.ip-45-79-2-160.cloudezapp.io";
+const isLocalDevelopmentHost =
+  window.location.hostname === "localhost" || window.location.hostname.endsWith(".localhost");
 const API_ORIGIN =
-  window.location.origin === BACKEND_ORIGIN ? "" : BACKEND_ORIGIN;
+  isLocalDevelopmentHost || window.location.origin === BACKEND_ORIGIN ? "" : BACKEND_ORIGIN;
 
 interface ApiBusiness {
   id: number;
   slug: string;
   name: string;
   description: string;
+  services_products?: string;
+  plan_type?: "free" | "paid";
+  public_subdomain?: string;
+  meta_pixel_id?: string;
+  google_analytics_id?: string;
+  google_ads_id?: string;
   category: string | null;
   street: string;
   number: string;
@@ -73,7 +81,12 @@ export interface AdvertisingPlan {
   price: string;
   billing_cycle: "monthly" | "quarterly" | "semiannual" | "annual";
   max_ads: number;
+  plan_type: "free" | "paid";
+  max_images: number;
   featured: boolean;
+  includes_coupons: boolean;
+  includes_marketing: boolean;
+  includes_custom_page: boolean;
   is_active: boolean;
 }
 
@@ -243,6 +256,12 @@ export function mapBusiness(item: ApiBusiness): Business {
     slug: item.slug,
     name: item.name,
     description: item.description,
+    servicesProducts: item.services_products ?? "",
+    planType: item.plan_type ?? "free",
+    publicSubdomain: item.public_subdomain ?? "",
+    metaPixelId: item.meta_pixel_id ?? "",
+    googleAnalyticsId: item.google_analytics_id ?? "",
+    googleAdsId: item.google_ads_id ?? "",
     category: item.category ?? "",
     address: [item.street && `${item.street}, ${item.number}`, item.complement]
       .filter(Boolean)
@@ -275,6 +294,12 @@ function businessPayload(business: Business) {
   return {
     name: business.name,
     description: business.description,
+    services_products: business.servicesProducts ?? "",
+    plan_type: business.planType ?? "free",
+    public_subdomain: business.publicSubdomain ?? "",
+    meta_pixel_id: business.metaPixelId ?? "",
+    google_analytics_id: business.googleAnalyticsId ?? "",
+    google_ads_id: business.googleAdsId ?? "",
     category: business.category || null,
     street: business.street || business.address.split(",")[0]?.trim() || "Nao informado",
     number: business.number || business.address.split(",")[1]?.trim() || "S/N",

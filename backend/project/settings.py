@@ -112,6 +112,14 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    pattern.strip()
+    for pattern in os.environ.get(
+        "DJANGO_CORS_ALLOWED_ORIGIN_REGEXES",
+        r"^https://([a-z0-9-]+\.)?guiacomararaquara\.com\.br$",
+    ).split(",")
+    if pattern.strip()
+]
 
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()

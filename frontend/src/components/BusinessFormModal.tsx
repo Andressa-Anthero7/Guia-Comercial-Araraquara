@@ -1,7 +1,8 @@
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, ChangeEvent } from "react";
 import { Business, Category } from "../types";
 import { CATEGORIES, NEIGHBORHOODS } from "../data";
 import { X, Send, CheckCircle2, Sparkles, Image as ImageIcon } from "lucide-react";
+import { optimizeImageFile } from "../utils/content";
 
 interface BusinessFormModalProps {
   onClose: () => void;
@@ -31,6 +32,7 @@ export function BusinessFormModal({ onClose, onSubmit }: BusinessFormModalProps)
   const [selectedImage, setSelectedImage] = useState(PRESET_IMAGES[0].url);
   const [customImageUrl, setCustomImageUrl] = useState("");
   const [imageType, setImageType] = useState<"preset" | "custom">("preset");
+  const [coverImage, setCoverImage] = useState("");
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -46,7 +48,7 @@ export function BusinessFormModal({ onClose, onSubmit }: BusinessFormModalProps)
       .map((t) => t.trim())
       .filter((t) => t.length > 0);
 
-    const imageToUse = imageType === "custom" && customImageUrl.trim() ? customImageUrl : selectedImage;
+    const imageToUse = coverImage || (imageType === "custom" && customImageUrl.trim() ? customImageUrl : selectedImage);
 
     try {
       await onSubmit({
@@ -60,11 +62,24 @@ export function BusinessFormModal({ onClose, onSubmit }: BusinessFormModalProps)
         instagram: instagram.trim() ? instagram.trim().replace("@", "") : undefined,
         hours,
         tags: tags.length > 0 ? tags : ["Comércio Local"],
-        image: imageToUse
+        image: imageToUse,
+        images: [imageToUse],
+        planType: "free"
       });
       setSuccess(true);
     } catch (reason) {
       window.alert(reason instanceof Error ? reason.message : "Nao foi possivel enviar.");
+    }
+  };
+
+  const handleCoverUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      setCoverImage(await optimizeImageFile(file));
+      setImageType("custom");
+    } catch (reason) {
+      window.alert(reason instanceof Error ? reason.message : "Nao foi possivel processar a imagem.");
     }
   };
 
@@ -170,11 +185,11 @@ export function BusinessFormModal({ onClose, onSubmit }: BusinessFormModalProps)
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-stone-500 mb-1.5">Descrição Curta *</label>
+              <label className="block text-xs font-semibold text-stone-500 mb-1.5">Descrição, serviços e produtos *</label>
               <textarea
                 required
                 rows={3}
-                placeholder="Conte sobre sua empresa, diferenciais, produtos ou história... (mínimo 10 caracteres)"
+                placeholder="Descreva a empresa, seus serviços, produtos e diferenciais..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full rounded-xl border border-stone-200 px-3.5 py-2.5 text-xs text-stone-950 placeholder-stone-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500"
@@ -284,6 +299,9 @@ export function BusinessFormModal({ onClose, onSubmit }: BusinessFormModalProps)
 
             {/* Selector between preset image or custom URL */}
             <div className="flex space-x-4 border-b border-stone-100 pb-3">
+              <button type="button" onClick={() => setImageType("custom")} className={`text-xs font-bold pb-1 transition-colors cursor-pointer ${coverImage ? "border-b-2 border-amber-500 text-stone-900" : "text-stone-400 hover:text-stone-600"}`}>
+                Enviar Foto do Estabelecimento
+              </button>
               <button
                 type="button"
                 onClick={() => setImageType("preset")}
@@ -336,6 +354,11 @@ export function BusinessFormModal({ onClose, onSubmit }: BusinessFormModalProps)
               </div>
             ) : (
               <div>
+                <label className="mb-3 block rounded-xl border-2 border-dashed border-amber-300 bg-amber-50/50 p-4 text-center text-xs font-bold text-stone-700">
+                  {coverImage ? "Foto carregada. Selecione para substituir." : "Enviar foto de capa do seu estabelecimento"}
+                  <input type="file" accept="image/*" className="mt-2 block w-full text-xs" onChange={(event) => void handleCoverUpload(event)} />
+                </label>
+                {coverImage && <img src={coverImage} alt="Prévia da capa" className="mb-3 h-32 w-full rounded-xl object-cover" />}
                 <label className="block text-xs font-semibold text-stone-500 mb-1.5">Cole a URL da Imagem (Unsplash, Imgur, etc.)</label>
                 <div className="flex items-center space-x-2">
                   <ImageIcon className="h-5 w-5 text-stone-400" />

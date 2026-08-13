@@ -9,6 +9,7 @@ import { CouponSection } from "./components/CouponSection";
 import { EventSection } from "./components/EventSection";
 import { UsefulNumbersSection } from "./components/UsefulNumbersSection";
 import { BusinessFormModal } from "./components/BusinessFormModal";
+import { BusinessLandingPage } from "./components/BusinessLandingPage";
 import { Footer } from "./components/Footer";
 import { Backoffice } from "./components/Backoffice";
 import { BackofficeLogin } from "./components/BackofficeLogin";
@@ -30,8 +31,27 @@ import {
 } from "./api";
 import { SlidersHorizontal, Sparkles, Building2, Store } from "lucide-react";
 
+const GUIDE_DOMAIN = "guiacomararaquara.com.br";
+
+function tenantSubdomain(hostname: string) {
+  const normalizedHost = hostname.toLowerCase().replace(/\.$/, "");
+  if (normalizedHost.endsWith(".localhost")) {
+    return normalizedHost.slice(0, -".localhost".length);
+  }
+  const suffix = `.${GUIDE_DOMAIN}`;
+  if (!normalizedHost.endsWith(suffix)) return "";
+  const subdomain = normalizedHost.slice(0, -suffix.length);
+  return subdomain && !["www", "api", "admin", "backoffice", "mail"].includes(subdomain)
+    ? subdomain
+    : "";
+}
+
 export default function App() {
   const isNativeApp = Capacitor.isNativePlatform();
+  const localSubdomainPreview = window.location.hostname === "localhost"
+    ? new URLSearchParams(window.location.search).get("subdomain")?.toLowerCase() ?? ""
+    : "";
+  const currentTenantSubdomain = localSubdomainPreview || tenantSubdomain(window.location.hostname);
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
   const [isBackofficeAuthenticated, setIsBackofficeAuthenticated] = useState(false);
   const [isSessionChecked, setIsSessionChecked] = useState(false);
@@ -75,6 +95,7 @@ export default function App() {
   const [coupons, setCoupons] = useState<Coupon[]>(COUPONS);
   const [events, setEvents] = useState<Event[]>(EVENTS);
   const [usefulNumbers, setUsefulNumbers] = useState<UsefulNumber[]>(USEFUL_NUMBERS);
+  const [isPortalLoaded, setIsPortalLoaded] = useState(false);
 
   // --- Filtering & UI States ---
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -112,7 +133,8 @@ export default function App() {
         if (data.events.length) setEvents(data.events);
         if (data.usefulNumbers.length) setUsefulNumbers(data.usefulNumbers);
       })
-      .catch((error) => console.error("Nao foi possivel carregar a API.", error));
+      .catch((error) => console.error("Nao foi possivel carregar a API.", error))
+      .finally(() => setIsPortalLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -300,6 +322,27 @@ export default function App() {
           window.location.href = "https://webapp415008.ip-45-79-2-160.cloudezapp.io/";
         }}
       />
+    );
+  }
+
+  if (currentTenantSubdomain) {
+    const tenantBusiness = businesses.find(
+      (business) => business.publicSubdomain === currentTenantSubdomain && (business.status ?? "active") === "active"
+    );
+    if (!isPortalLoaded) {
+      return <div className="flex min-h-screen items-center justify-center bg-stone-50 text-sm font-bold text-stone-600">Carregando pagina da empresa...</div>;
+    }
+    if (tenantBusiness) {
+      return <BusinessLandingPage business={tenantBusiness} coupons={coupons} />;
+    }
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-stone-50 p-6 text-center">
+        <div className="max-w-md rounded-2xl border border-stone-200 bg-white p-8 shadow-sm">
+          <h1 className="text-xl font-extrabold text-stone-900">Pagina indisponivel</h1>
+          <p className="mt-3 text-sm leading-relaxed text-stone-600">Esta pagina de empresa nao existe ou ainda nao foi publicada.</p>
+          <a href="https://www.guiacomararaquara.com.br" className="mt-6 inline-flex rounded-xl bg-stone-900 px-4 py-3 text-sm font-bold text-white">Ir para o Guia Comercial</a>
+        </div>
+      </main>
     );
   }
 
