@@ -522,7 +522,7 @@ class AdvertisementSerializer(serializers.ModelSerializer):
         self._sync_guide_profile(advertisement)
 
     def _sync_guide_profile(self, advertisement):
-        if not advertisement.is_primary:
+        if not advertisement.is_primary or advertisement.status != Advertisement.Status.PUBLISHED:
             return
         business = advertisement.business
         business.description = advertisement.description or advertisement.short_description

@@ -36,6 +36,7 @@ urlpatterns = [
     path("sw.js", service_worker),
     re_path(r"^assets/(?P<asset_path>.+)$", backoffice_asset),
     re_path(r"^backoffice(?:/.*)?$", backoffice_index),
+    re_path(r"^anunciante(?:/.*)?$", backoffice_index),
     path("admin/", admin.site.urls),
     path("api/", include("core.urls")),
 ]

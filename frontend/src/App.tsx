@@ -13,6 +13,8 @@ import { BusinessLandingPage } from "./components/BusinessLandingPage";
 import { Footer } from "./components/Footer";
 import { Backoffice } from "./components/Backoffice";
 import { BackofficeLogin } from "./components/BackofficeLogin";
+import { AdvertiserLogin } from "./components/AdvertiserLogin";
+import { AdvertiserPortal } from "./components/AdvertiserPortal";
 
 import { Business, Review, Coupon, Event, UsefulNumber } from "./types";
 import { INITIAL_BUSINESSES, INITIAL_REVIEWS, COUPONS, EVENTS, USEFUL_NUMBERS } from "./data";
@@ -24,6 +26,7 @@ import {
   loadBackofficeBusinesses,
   loadPortalData,
   loginBackoffice,
+  loginAdvertiser,
   logoutBackoffice,
   saveBackofficeBusiness,
   changeBackofficeBusinessStatus,
@@ -114,7 +117,9 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!currentPath.startsWith("/backoffice")) return;
+    const isProtectedArea = currentPath.startsWith("/backoffice") || currentPath.startsWith("/anunciante");
+    if (!isProtectedArea) return;
+    setIsSessionChecked(false);
     getSession()
       .then((session) => {
         setBackofficeSession(session);
@@ -262,6 +267,23 @@ export default function App() {
       previous.map((item) => (item.id === savedBusiness.id ? savedBusiness : item))
     );
   };
+
+  if (currentPath.startsWith("/anunciante")) {
+    if (!isSessionChecked) {
+      return <div className="flex min-h-screen items-center justify-center bg-slate-100 text-sm font-semibold text-slate-600">Carregando acesso...</div>;
+    }
+    if (!backofficeSession.is_advertiser) {
+      return <AdvertiserLogin onLogin={async (username, password) => {
+        const session = await loginAdvertiser(username, password);
+        setBackofficeSession(session);
+      }} onExit={() => { window.location.href = "https://webapp415008.ip-45-79-2-160.cloudezapp.io/"; }} />;
+    }
+    return <AdvertiserPortal onLogout={async () => {
+      await logoutBackoffice();
+      setBackofficeSession({ is_authenticated: false, is_backoffice: false, is_advertiser: false, username: "", name: "", email: "" });
+      window.location.href = "https://webapp415008.ip-45-79-2-160.cloudezapp.io/";
+    }} />;
+  }
 
   if (currentPath.startsWith("/backoffice")) {
     if (!isSessionChecked) {

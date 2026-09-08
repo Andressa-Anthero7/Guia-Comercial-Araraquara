@@ -54,6 +54,7 @@ interface ApiReview {
 export interface BackofficeSession {
   is_authenticated: boolean;
   is_backoffice: boolean;
+  is_advertiser?: boolean;
   username: string;
   name: string;
   email: string;
@@ -156,6 +157,28 @@ export interface Advertisement {
   status: "draft" | "review" | "published" | "paused" | "ended";
   is_featured: boolean;
   is_primary: boolean;
+}
+
+export interface AdvertiserCoupon {
+  id: number;
+  business: string;
+  business_name: string;
+  title: string;
+  discount_code: string;
+  description: string;
+  starts_at: string | null;
+  expires_at: string | null;
+  is_active: boolean;
+  is_valid: boolean;
+}
+
+export interface AdvertiserPortalData {
+  advertiser: Advertiser;
+  businesses: Business[];
+  advertisements: Advertisement[];
+  coupons: AdvertiserCoupon[];
+  subscriptions: AdvertisingSubscription[];
+  invoices: Invoice[];
 }
 
 export interface FinanceSummary {
@@ -461,6 +484,61 @@ export async function logoutBackoffice() {
     "/api/auth/logout/",
     { method: "POST" }
   );
+}
+
+export async function loginAdvertiser(username: string, password: string) {
+  await ensureCsrf();
+  return request<BackofficeSession>("/api/auth/advertiser/login/", {
+    method: "POST",
+    body: JSON.stringify({ username, password })
+  });
+}
+
+export async function loadAdvertiserPortal(): Promise<AdvertiserPortalData> {
+  const data = await request<Omit<AdvertiserPortalData, "businesses"> & { businesses: ApiBusiness[] }>(
+    "/api/advertiser/portal/"
+  );
+  return { ...data, businesses: data.businesses.map(mapBusiness) };
+}
+
+export async function updateAdvertiserProfile(value: Pick<Advertiser, "name" | "document" | "contact_name" | "email" | "phone" | "billing_email">) {
+  await ensureCsrf();
+  return request<Advertiser>("/api/advertiser/profile/", {
+    method: "PATCH",
+    body: JSON.stringify(value)
+  });
+}
+
+export async function updateAdvertiserBusiness(business: Business) {
+  if (!business.slug) throw new Error("Estabelecimento sem identificador.");
+  await ensureCsrf();
+  const item = await request<ApiBusiness>(`/api/advertiser/businesses/${business.slug}/`, {
+    method: "PATCH",
+    body: JSON.stringify(businessPayload(business))
+  });
+  return mapBusiness(item);
+}
+
+export async function saveAdvertiserCoupon(value: Omit<AdvertiserCoupon, "id" | "business_name" | "is_valid"> & { id?: number }) {
+  await ensureCsrf();
+  return request<AdvertiserCoupon>(
+    value.id ? `/api/advertiser/coupons/${value.id}/` : "/api/advertiser/coupons/",
+    {
+      method: value.id ? "PATCH" : "POST",
+      body: JSON.stringify(value)
+    }
+  );
+}
+
+export async function submitAdvertiserAdvertisement(
+  id: number,
+  value: Pick<Advertisement, "title" | "short_description" | "description" | "call_to_action" | "destination_url" | "video_url">
+) {
+  await ensureCsrf();
+  return request<Advertisement>(`/api/advertiser/advertisements/${id}/`, {
+    method: "PATCH",
+    body: JSON.stringify(value)
+  });
 }
 
 export async function loadFinanceData() {

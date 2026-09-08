@@ -39,7 +39,17 @@ class FinanceApiTests(TestCase):
             name="Anunciante Teste",
             email="anunciante@example.com",
         )
+        self.advertiser_user = get_user_model().objects.create_user(
+            username="anunciante-teste",
+            password="advertiser-password",
+            email="anunciante@example.com",
+            first_name="Responsavel",
+        )
+        self.advertiser.user = self.advertiser_user
+        self.advertiser.save()
         self.advertiser.businesses.add(self.business)
+        self.advertiser_client = APIClient()
+        self.advertiser_client.force_authenticate(self.advertiser_user)
         self.plan = AdvertisingPlan.objects.create(
             name="Plano Profissional",
             price=Decimal("199.90"),
@@ -257,3 +267,83 @@ class FinanceApiTests(TestCase):
         self.assertTrue(
             PushSubscription.objects.filter(user=self.user, is_active=True).exists()
         )
+
+    def test_advertiser_can_login_and_view_only_its_portal_data(self):
+        response = APIClient().post(
+            "/api/auth/advertiser/login/",
+            {"username": "anunciante-teste", "password": "advertiser-password"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertTrue(response.data["is_advertiser"])
+
+        response = self.advertiser_client.get("/api/advertiser/portal/")
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["advertiser"]["id"], self.advertiser.id)
+        self.assertEqual([item["id"] for item in response.data["businesses"]], [self.business.id])
+
+    def test_advertiser_can_update_own_profile_and_business_but_not_another(self):
+        profile_response = self.advertiser_client.patch(
+            "/api/advertiser/profile/",
+            {"contact_name": "Novo Responsavel", "phone": "16988887777"},
+            format="json",
+        )
+        self.assertEqual(profile_response.status_code, 200, profile_response.data)
+        self.advertiser.refresh_from_db()
+        self.assertEqual(self.advertiser.contact_name, "Novo Responsavel")
+
+        business_response = self.advertiser_client.patch(
+            f"/api/advertiser/businesses/{self.business.slug}/",
+            {"description": "Descricao atualizada pelo anunciante."},
+            format="json",
+        )
+        self.assertEqual(business_response.status_code, 200, business_response.data)
+        self.business.refresh_from_db()
+        self.assertEqual(self.business.description, "Descricao atualizada pelo anunciante.")
+
+        other = Business.objects.create(
+            name="Outro estabelecimento",
+            street="Rua Dois",
+            number="20",
+            phone_whatsapp="16999999998",
+        )
+        forbidden = self.advertiser_client.patch(
+            f"/api/advertiser/businesses/{other.slug}/",
+            {"description": "Tentativa indevida"},
+            format="json",
+        )
+        self.assertEqual(forbidden.status_code, 404)
+
+    def test_advertiser_can_create_coupon_only_for_owned_paid_business(self):
+        response = self.advertiser_client.post(
+            "/api/advertiser/coupons/",
+            {
+                "business": self.business.slug,
+                "title": "Desconto de teste",
+                "discount_code": "TESTE10",
+                "description": "Dez por cento de desconto.",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data["business"], self.business.slug)
+
+    def test_advertiser_advertisement_edit_goes_to_review_without_publishing_content(self):
+        advertisement = Advertisement.objects.create(
+            business=self.business,
+            title="Anuncio publicado",
+            description="Descricao publicada.",
+            status=Advertisement.Status.PUBLISHED,
+        )
+        self.business.description = "Perfil publico atual."
+        self.business.save()
+
+        response = self.advertiser_client.patch(
+            f"/api/advertiser/advertisements/{advertisement.id}/",
+            {"description": "Novo texto para revisao."},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["status"], Advertisement.Status.REVIEW)
+        self.business.refresh_from_db()
+        self.assertEqual(self.business.description, "Perfil publico atual.")

@@ -89,15 +89,55 @@ def backoffice_logout(request):
 @api_view(["GET"])
 def backoffice_session(request):
     user = request.user
+    is_advertiser = (
+        user.is_authenticated
+        and Advertiser.objects.filter(user=user, status=Advertiser.Status.ACTIVE).exists()
+    )
     return Response(
         {
             "is_authenticated": user.is_authenticated,
             "is_backoffice": user.is_authenticated and user.is_staff,
+            "is_advertiser": is_advertiser,
             "username": user.get_username() if user.is_authenticated else "",
             "name": user.get_full_name() if user.is_authenticated else "",
             "email": user.email if user.is_authenticated else "",
         }
     )
+
+
+def active_advertiser_for(request):
+    if not request.user.is_authenticated:
+        return None
+    return Advertiser.objects.filter(
+        user=request.user,
+        status=Advertiser.Status.ACTIVE,
+    ).prefetch_related("businesses").first()
+
+
+@api_view(["POST"])
+def advertiser_login(request):
+    username = request.data.get("username", "")
+    password = request.data.get("password", "")
+    user = authenticate(request, username=username, password=password)
+    advertiser = (
+        Advertiser.objects.filter(user=user, status=Advertiser.Status.ACTIVE).first()
+        if user is not None
+        else None
+    )
+    if advertiser is None:
+        return Response(
+            {"detail": "Usuario ou senha invalidos para a area do anunciante."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    login(request, user)
+    return Response({
+        "is_authenticated": True,
+        "is_backoffice": user.is_staff,
+        "is_advertiser": True,
+        "username": user.get_username(),
+        "name": user.get_full_name() or advertiser.contact_name or advertiser.name,
+        "email": user.email,
+    })
 
 
 @api_view(["GET"])
@@ -157,7 +197,7 @@ def advertiser_portal(request):
     """Self-service data for the authenticated advertiser linked to the account."""
     if not request.user.is_authenticated:
         return Response({"detail": "Autenticacao necessaria."}, status=status.HTTP_401_UNAUTHORIZED)
-    advertiser = Advertiser.objects.filter(user=request.user, status=Advertiser.Status.ACTIVE).first()
+    advertiser = active_advertiser_for(request)
     if not advertiser:
         return Response({"detail": "Nenhum perfil de anunciante vinculado a este usuario."}, status=status.HTTP_404_NOT_FOUND)
     businesses = advertiser.businesses.prefetch_related("advertisements", "coupons")
@@ -165,10 +205,93 @@ def advertiser_portal(request):
         "advertiser": AdvertiserSerializer(advertiser).data,
         "businesses": BackofficeBusinessSerializer(businesses, many=True).data,
         "advertisements": AdvertisementSerializer(Advertisement.objects.filter(business__in=businesses), many=True).data,
-        "coupons": CouponSerializer(Coupon.objects.filter(business__in=businesses), many=True).data,
+        "coupons": BackofficeCouponSerializer(Coupon.objects.filter(business__in=businesses), many=True).data,
         "subscriptions": AdvertisingSubscriptionSerializer(AdvertisingSubscription.objects.filter(advertiser=advertiser), many=True).data,
         "invoices": InvoiceSerializer(Invoice.objects.filter(subscription__advertiser=advertiser), many=True).data,
     })
+
+
+@api_view(["PATCH"])
+def advertiser_profile(request):
+    advertiser = active_advertiser_for(request)
+    if advertiser is None:
+        return Response({"detail": "Acesso nao autorizado."}, status=status.HTTP_403_FORBIDDEN)
+    allowed_fields = {"name", "document", "contact_name", "email", "phone", "billing_email"}
+    serializer = AdvertiserSerializer(
+        advertiser,
+        data={key: value for key, value in request.data.items() if key in allowed_fields},
+        partial=True,
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data)
+
+
+@api_view(["PATCH"])
+def advertiser_business(request, slug):
+    advertiser = active_advertiser_for(request)
+    if advertiser is None:
+        return Response({"detail": "Acesso nao autorizado."}, status=status.HTTP_403_FORBIDDEN)
+    business = advertiser.businesses.filter(slug=slug).first()
+    if business is None:
+        return Response({"detail": "Estabelecimento nao encontrado."}, status=status.HTTP_404_NOT_FOUND)
+    allowed_fields = {
+        "name", "description", "services_products", "category", "street", "number",
+        "complement", "neighborhood", "city", "state", "postal_code", "phone_whatsapp",
+        "email", "website", "instagram", "logo_image", "image_url", "images",
+        "opening_hours", "tags",
+    }
+    serializer = BackofficeBusinessSerializer(
+        business,
+        data={key: value for key, value in request.data.items() if key in allowed_fields},
+        partial=True,
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data)
+
+
+@api_view(["POST", "PATCH"])
+def advertiser_coupon(request, coupon_id=None):
+    advertiser = active_advertiser_for(request)
+    if advertiser is None:
+        return Response({"detail": "Acesso nao autorizado."}, status=status.HTTP_403_FORBIDDEN)
+    if coupon_id is None:
+        serializer = BackofficeCouponSerializer(data=request.data)
+    else:
+        coupon = Coupon.objects.filter(pk=coupon_id, business__advertisers=advertiser).first()
+        if coupon is None:
+            return Response({"detail": "Cupom nao encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = BackofficeCouponSerializer(coupon, data=request.data, partial=True)
+    serializer.is_valid(raise_exception=True)
+    business = serializer.validated_data.get("business")
+    if business is not None and not advertiser.businesses.filter(pk=business.pk).exists():
+        return Response({"business": "Este estabelecimento nao pertence ao anunciante."}, status=status.HTTP_403_FORBIDDEN)
+    coupon = serializer.save()
+    return Response(BackofficeCouponSerializer(coupon).data, status=status.HTTP_201_CREATED if coupon_id is None else status.HTTP_200_OK)
+
+
+@api_view(["PATCH"])
+def advertiser_advertisement(request, advertisement_id):
+    advertiser = active_advertiser_for(request)
+    if advertiser is None:
+        return Response({"detail": "Acesso nao autorizado."}, status=status.HTTP_403_FORBIDDEN)
+    advertisement = Advertisement.objects.filter(
+        pk=advertisement_id,
+        business__advertisers=advertiser,
+    ).first()
+    if advertisement is None:
+        return Response({"detail": "Anuncio nao encontrado."}, status=status.HTTP_404_NOT_FOUND)
+    allowed_fields = {
+        "title", "short_description", "description", "call_to_action", "destination_url",
+        "logo_image", "cover_image", "video_url", "tags", "media", "starts_at", "ends_at",
+    }
+    data = {key: value for key, value in request.data.items() if key in allowed_fields}
+    data["status"] = Advertisement.Status.REVIEW
+    serializer = AdvertisementSerializer(advertisement, data=data, partial=True)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data)
 
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):

@@ -63,6 +63,28 @@ const businesses = [
   }
 ];
 
+const advertiserPortal = {
+  advertiser: {
+    id: 1, user: 10, businesses: [101], business_names: ["Cafe Central"],
+    name: "Cafe Central Ltda", document: "", contact_name: "Responsavel", email: "contato@cafecentral.test",
+    phone: "16999999999", billing_email: "financeiro@cafecentral.test", status: "active", notes: ""
+  },
+  businesses: [businesses[0]],
+  advertisements: [{
+    id: 1, business: 101, business_name: "Cafe Central", title: "Cafe especial", short_description: "Paes artesanais",
+    description: "Cafe especial e paes artesanais.", call_to_action: "Fale conosco", destination_url: "", logo_image: "",
+    cover_image: "", video_url: "", tags: [], tag_names: [], media: [], starts_at: null, ends_at: null,
+    status: "published", is_featured: true, is_primary: true
+  }],
+  coupons: [],
+  subscriptions: [{
+    id: 1, advertiser: 1, advertiser_name: "Cafe Central Ltda", business: 101, business_name: "Cafe Central",
+    advertisement: 1, plan: 1, plan_name: "Profissional", start_date: "2026-01-01", end_date: null,
+    next_due_date: "2026-09-20", agreed_price: "199.90", status: "active", auto_renew: true, notes: ""
+  }],
+  invoices: []
+};
+
 async function mockApi(page: Page) {
   await page.route("**/api/**", async (route) => {
     const request = route.request();
@@ -76,12 +98,17 @@ async function mockApi(page: Page) {
 
     if (path.endsWith("/auth/csrf/")) return json({ csrf: "test" });
     if (path.endsWith("/auth/session/")) {
-      return json({ is_authenticated: false, is_backoffice: false, username: "", name: "", email: "" });
+      return json({ is_authenticated: false, is_backoffice: false, is_advertiser: false, username: "", name: "", email: "" });
+    }
+    if (path.endsWith("/auth/advertiser/login/")) {
+      return json({ is_authenticated: true, is_backoffice: false, is_advertiser: true, username: "anunciante", name: "Responsavel", email: "contato@cafecentral.test" });
     }
     if (path.endsWith("/auth/login/")) {
       return json({ is_authenticated: true, is_backoffice: true, username: "admin", name: "Admin", email: "admin@test.local" });
     }
     if (path.endsWith("/auth/logout/")) return json({ is_authenticated: false, is_backoffice: false });
+    if (path.endsWith("/advertiser/portal/")) return json(advertiserPortal);
+    if (path.endsWith("/advertiser/profile/")) return json(advertiserPortal.advertiser);
     if (path.endsWith("/backoffice/businesses/")) {
       if (request.method() === "PATCH") return json({ ...businesses[1], status: "active" });
       return json(businesses);
@@ -141,4 +168,16 @@ test("autentica no backoffice e filtra estabelecimentos por status", async ({ pa
   const businessTable = page.getByRole("table");
   await expect(businessTable.getByText("Oficina Norte", { exact: true })).toBeVisible();
   await expect(businessTable.getByText("Cafe Central", { exact: true })).not.toBeVisible();
+});
+
+test("autentica o anunciante e exibe sua area restrita", async ({ page }) => {
+  await page.goto("/anunciante/");
+
+  await page.getByLabel("Usuario").fill("anunciante");
+  await page.locator('input[type="password"]').fill("senha-de-teste");
+  await page.getByRole("button", { name: "Entrar" }).click();
+
+  await expect(page.getByRole("heading", { name: "Area do Anunciante" })).toBeVisible();
+  await expect(page.getByText("Cafe Central Ltda", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Profissional/)).toBeVisible();
 });
