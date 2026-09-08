@@ -61,6 +61,9 @@ export function BusinessModal({ business, reviews, coupons, onClose, onSubmitRev
   const mapsSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     business.name + ", " + business.address + ", Araraquara - SP"
   )}`;
+  const mapsEmbedUrl = `https://www.google.com/maps?output=embed&q=${encodeURIComponent(
+    business.name + ", " + business.address + ", Araraquara - SP"
+  )}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm overflow-y-auto">
@@ -333,15 +336,15 @@ export function BusinessModal({ business, reviews, coupons, onClose, onSubmitRev
             <div className="rounded-2xl border border-stone-200 p-5 space-y-3">
               <h3 className="font-display text-sm font-bold text-stone-900">Como Chegar</h3>
               
-              {/* Mock Map View */}
-              <div className="relative h-36 w-full rounded-xl bg-stone-100 border border-stone-200 overflow-hidden flex flex-col items-center justify-center text-center p-4">
-                {/* Visual grid representing map streets */}
-                <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:14px_24px]" />
-                <div className="absolute h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center animate-ping" />
-                <MapPin className="h-8 w-8 text-amber-600 relative z-10 filter drop-shadow-xs" />
-                <span className="mt-2 text-[11px] font-bold text-stone-800 relative z-10">
-                  {business.neighborhood}, Araraquara SP
-                </span>
+              <div className="h-36 w-full overflow-hidden rounded-xl border border-stone-200 bg-stone-100">
+                <iframe
+                  id="modal-maps-embed"
+                  title={`Mapa de ${business.name}`}
+                  src={mapsEmbedUrl}
+                  className="h-full w-full border-0"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
               </div>
 
               <a

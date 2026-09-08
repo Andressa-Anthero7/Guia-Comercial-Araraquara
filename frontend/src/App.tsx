@@ -226,7 +226,6 @@ export default function App() {
     };
 
     await createPublicBusiness(newBiz);
-    setIsRegisterModalOpen(false);
   };
 
   const handleSubmitReview = async (newReviewData: Omit<Review, "id" | "date">) => {
