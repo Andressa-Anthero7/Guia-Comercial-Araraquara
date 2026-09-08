@@ -142,6 +142,13 @@ test("permite pesquisar e abrir os detalhes de um anunciante publico", async ({ 
   await expect(page.locator("#modal-maps-embed")).toHaveAttribute("src", /google\.com\/maps/);
 });
 
+test("abre a pagina personalizada quando o host corresponde ao subdominio do anunciante", async ({ page }) => {
+  await page.goto("http://cafe-central.localhost:3000/");
+
+  await expect(page.getByRole("heading", { name: "Cafe Central" })).toBeVisible();
+  await expect(page.getByText("Cafe especial e paes artesanais.")).toBeVisible();
+});
+
 test("envia um novo cadastro para aprovacao", async ({ page }) => {
   await page.goto("/");
 
