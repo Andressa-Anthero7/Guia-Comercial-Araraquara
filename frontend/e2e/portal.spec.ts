@@ -149,6 +149,12 @@ test("abre a pagina personalizada quando o host corresponde ao subdominio do anu
   await expect(page.getByText("Cafe especial e paes artesanais.")).toBeVisible();
 });
 
+test("abre a previa publica da pagina personalizada pelo parametro subdomain", async ({ page }) => {
+  await page.goto("/?subdomain=cafe-central");
+
+  await expect(page.getByRole("heading", { name: "Cafe Central" })).toBeVisible();
+});
+
 test("envia um novo cadastro para aprovacao", async ({ page }) => {
   await page.goto("/");
 

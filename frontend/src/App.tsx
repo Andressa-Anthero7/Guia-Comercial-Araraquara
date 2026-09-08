@@ -51,10 +51,9 @@ function tenantSubdomain(hostname: string) {
 
 export default function App() {
   const isNativeApp = Capacitor.isNativePlatform();
-  const localSubdomainPreview = window.location.hostname === "localhost"
-    ? new URLSearchParams(window.location.search).get("subdomain")?.toLowerCase() ?? ""
-    : "";
-  const currentTenantSubdomain = localSubdomainPreview || tenantSubdomain(window.location.hostname);
+  // The query parameter is a shareable fallback while a customer's custom domain is pending.
+  const subdomainPreview = new URLSearchParams(window.location.search).get("subdomain")?.toLowerCase() ?? "";
+  const currentTenantSubdomain = tenantSubdomain(window.location.hostname) || subdomainPreview;
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
   const [isBackofficeAuthenticated, setIsBackofficeAuthenticated] = useState(false);
   const [isSessionChecked, setIsSessionChecked] = useState(false);
