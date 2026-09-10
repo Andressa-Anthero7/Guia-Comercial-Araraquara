@@ -101,7 +101,8 @@ class Business(models.Model):
     state = models.CharField("UF", max_length=2, default="SP")
     postal_code = models.CharField("CEP", max_length=10, blank=True)
 
-    phone_whatsapp = models.CharField("fone/whatsapp", max_length=30)
+    phone = models.CharField("telefone comercial", max_length=30, blank=True)
+    phone_whatsapp = models.CharField("WhatsApp", max_length=30)
     email = models.EmailField("e-mail", blank=True)
     website = models.URLField("site", blank=True)
     instagram = models.CharField("instagram", max_length=80, blank=True)

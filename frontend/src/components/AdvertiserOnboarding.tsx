@@ -40,6 +40,7 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
     complement: existingBusiness?.complement ?? "", neighborhood: existingBusiness?.neighborhood ?? NEIGHBORHOODS[0] ?? "",
     city: existingBusiness?.city ?? "Araraquara", state: existingBusiness?.state ?? "SP",
     postalCode: existingBusiness?.postalCode ?? "", phone: existingBusiness?.phone ?? "",
+    whatsapp: existingBusiness?.whatsapp ?? "",
     email: existingBusiness?.email ?? "", website: existingBusiness?.website ?? "",
     instagram: existingBusiness?.instagram ?? "", hours: existingBusiness?.hours ?? "Seg - Sab: 08:00 as 18:00"
   });
@@ -148,7 +149,7 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
         state: establishment.state,
         postalCode: establishment.postalCode,
         phone: establishment.phone,
-        whatsapp: establishment.phone.replace(/\D/g, ""),
+        whatsapp: establishment.whatsapp,
         email: establishment.email,
         website: establishment.website,
         instagram: establishment.instagram.replace("@", ""),
@@ -270,7 +271,8 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
           <input required className={inputClass} placeholder="Numero" value={establishment.number} onChange={e=>setEstablishment({...establishment,number:e.target.value})}/>
           <input className={inputClass} placeholder="Complemento" value={establishment.complement} onChange={e=>setEstablishment({...establishment,complement:e.target.value})}/>
           <select className={inputClass} value={establishment.neighborhood} onChange={e=>setEstablishment({...establishment,neighborhood:e.target.value})}>{NEIGHBORHOODS.map(item=><option key={item}>{item}</option>)}</select>
-          <input required className={inputClass} placeholder="Telefone/WhatsApp" value={establishment.phone} onChange={e=>setEstablishment({...establishment,phone:e.target.value})}/>
+          <input className={inputClass} placeholder="Telefone comercial" value={establishment.phone} onChange={e=>setEstablishment({...establishment,phone:e.target.value})}/>
+          <input required className={inputClass} placeholder="WhatsApp do estabelecimento" value={establishment.whatsapp} onChange={e=>setEstablishment({...establishment,whatsapp:e.target.value})}/>
           <input type="email" className={inputClass} placeholder="E-mail publico" value={establishment.email} onChange={e=>setEstablishment({...establishment,email:e.target.value})}/>
           <input className={inputClass} placeholder="Site" value={establishment.website} onChange={e=>setEstablishment({...establishment,website:e.target.value})}/>
           <input className={inputClass} placeholder="Instagram" value={establishment.instagram} onChange={e=>setEstablishment({...establishment,instagram:e.target.value})}/>

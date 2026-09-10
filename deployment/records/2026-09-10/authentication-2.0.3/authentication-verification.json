@@ -1,0 +1,54 @@
+{
+  "version": "2.0.3",
+  "public_entry_redirect": true,
+  "expired_session_returns_to_login": true,
+  "second_login_succeeded": true,
+  "username": "sol.automotivo",
+  "user_id": 4,
+  "advertiser_id": 9,
+  "business_ids": [
+    8
+  ],
+  "login_url": "https://webapp415078.ip-45-79-2-160.cloudezapp.io/anunciante/",
+  "verified_at": "2026-09-10T12:23:49.663Z",
+  "login": 200,
+  "portal": 200,
+  "session_persists_after_reload": true,
+  "administrative_access": 403,
+  "counts": {
+    "businesses": 1,
+    "advertisements": 1,
+    "coupons": 0,
+    "subscriptions": 0,
+    "invoices": 0
+  },
+  "tabs": [
+    {
+      "tab": "Visao geral",
+      "displayed": true
+    },
+    {
+      "tab": "Cadastro",
+      "displayed": true
+    },
+    {
+      "tab": "Estabelecimentos",
+      "displayed": true
+    },
+    {
+      "tab": "Anuncios",
+      "displayed": true
+    },
+    {
+      "tab": "Cupons",
+      "displayed": true
+    },
+    {
+      "tab": "Financeiro",
+      "displayed": true,
+      "emptyAsRegistered": true
+    }
+  ],
+  "browser_errors": [],
+  "business_or_financial_data_modified": false
+}

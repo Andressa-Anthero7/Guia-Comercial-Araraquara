@@ -1,0 +1,28 @@
+{
+  "version": "2.0.1",
+  "administrative_resources": {
+    "categories": 200,
+    "tags": 200,
+    "reviews": 200,
+    "users": 200,
+    "businesses": 200,
+    "coupons": 200,
+    "events": 200,
+    "useful-numbers": 200,
+    "advertisers": 200,
+    "plans": 200,
+    "subscriptions": 200,
+    "invoices": 200,
+    "advertisements": 200
+  },
+  "anonymous_access_denied": true,
+  "transactional_registration_check": {
+    "separate_contacts": true,
+    "cover_persisted": true,
+    "requires_approval": true,
+    "gallery_served": true,
+    "rolled_back": true,
+    "test_records_remaining": 0
+  },
+  "business_count": 7
+}

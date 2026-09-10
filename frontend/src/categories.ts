@@ -1,24 +1,27 @@
 import { useEffect, useSyncExternalStore } from "react";
-import { CATEGORIES } from "./data";
 import { Category } from "./types";
 import { request } from "./api";
 
-let categories = CATEGORIES;
-let pending: Promise<void> | undefined;
+let categories: Category[] = [];
+let pending: Promise<boolean> | undefined;
 let loaded = false;
 const listeners = new Set<() => void>();
 export function refreshCategories() {
   if (pending) return pending;
-  pending = request<Category[]>("/api/categories/")
+  pending = request<Category[]>("/api/categories/", { signal: AbortSignal.timeout(15000) })
     .then((items) => {
       if (!Array.isArray(items))
         throw new Error("Resposta de categorias inválida.");
       categories = items;
       loaded = true;
       listeners.forEach((listener) => listener());
+      return true;
     })
     .catch(() => {
-      /* Keep the last known catalog during a network failure. */
+      categories = [];
+      loaded = false;
+      listeners.forEach((listener) => listener());
+      return false;
     })
     .finally(() => {
       pending = undefined;

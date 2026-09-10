@@ -136,6 +136,7 @@ class BusinessAdmin(admin.ModelAdmin):
             "Contato",
             {
                 "fields": (
+                    "phone",
                     "phone_whatsapp",
                     "email",
                     "website",

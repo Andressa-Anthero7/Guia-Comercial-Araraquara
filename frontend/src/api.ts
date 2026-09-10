@@ -1,10 +1,23 @@
 import { Business, Coupon, Event, Review, UsefulNumber } from "./types";
+import { whatsappNumber } from "./utils/contact";
 
 const BACKEND_ORIGIN = "https://webapp415078.ip-45-79-2-160.cloudezapp.io";
 const isLocalDevelopmentHost =
   ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname) || window.location.hostname.endsWith(".localhost");
 const API_ORIGIN =
   isLocalDevelopmentHost || window.location.origin === BACKEND_ORIGIN ? "" : BACKEND_ORIGIN;
+
+export function authenticationRedirectUrl(pathname: string) {
+  if (!API_ORIGIN || !/^\/(anunciante|backoffice)(?:\/|$)/.test(pathname)) return "";
+  return `${BACKEND_ORIGIN}${pathname}${window.location.search}${window.location.hash}`;
+}
+
+export class AuthenticationError extends Error {
+  constructor() {
+    super("Sua sessao expirou ou voce nao tem permissao. Entre novamente.");
+    this.name = "AuthenticationError";
+  }
+}
 
 interface ApiBusiness {
   id: number;
@@ -26,6 +39,7 @@ interface ApiBusiness {
   state: string;
   postal_code: string;
   phone_whatsapp: string;
+  phone?: string;
   email: string;
   website: string;
   instagram: string;
@@ -240,7 +254,7 @@ export async function request<T>(url: string, options: RequestInit = {}): Promis
       : {};
 
     if (response.status === 401 || response.status === 403) {
-      throw new Error("Sua sessao expirou ou voce nao tem permissao. Entre novamente.");
+      throw new AuthenticationError();
     }
     if (response.status === 413) {
       throw new Error("As imagens ultrapassaram o tamanho permitido pelo servidor.");
@@ -297,8 +311,8 @@ export function mapBusiness(item: ApiBusiness): Business {
     city: item.city,
     state: item.state,
     postalCode: item.postal_code,
-    phone: item.phone_whatsapp,
-    whatsapp: item.phone_whatsapp.replace(/\D/g, ""),
+    phone: item.phone || item.phone_whatsapp,
+    whatsapp: whatsappNumber(item.phone_whatsapp),
     email: item.email,
     website: item.website,
     instagram: item.instagram,
@@ -332,7 +346,8 @@ function businessPayload(business: Business) {
     city: business.city ?? "Araraquara",
     state: business.state ?? "SP",
     postal_code: business.postalCode ?? "",
-    phone_whatsapp: business.phone || business.whatsapp,
+    phone: business.phone,
+    phone_whatsapp: whatsappNumber(business.whatsapp || business.phone),
     email: business.email ?? "",
     website: business.website ?? "",
     instagram: business.instagram ?? "",
@@ -346,17 +361,23 @@ function businessPayload(business: Business) {
   };
 }
 
+export type PortalSection = "businesses" | "reviews" | "coupons" | "events" | "usefulNumbers" | "categories";
+
 export async function loadPortalData() {
+  const unavailable: PortalSection[] = [];
+  async function load<T, U>(section: PortalSection, path: string, map: (item: T) => U): Promise<U[]> {
+    try {
+      const items = await request<T[]>(path, { signal: AbortSignal.timeout(15000) });
+      if (!Array.isArray(items)) throw new Error("Resposta inválida.");
+      return items.map(map);
+    } catch {
+      unavailable.push(section);
+      return [];
+    }
+  }
   const [businesses, reviews, coupons, events, usefulNumbers] = await Promise.all([
-    request<ApiBusiness[]>("/api/businesses/"),
-    request<ApiReview[]>("/api/reviews/"),
-    request<Array<Record<string, unknown>>>("/api/coupons/"),
-    request<Array<Record<string, unknown>>>("/api/events/"),
-    request<Array<Record<string, unknown>>>("/api/useful-numbers/")
-  ]);
-  return {
-    businesses: businesses.map(mapBusiness),
-    reviews: reviews.map((item) => ({
+    load("businesses", "/api/businesses/", mapBusiness),
+    load("reviews", "/api/reviews/", (item: ApiReview): Review => ({
       id: String(item.id),
       businessId: String(item.business),
       author: item.author_name,
@@ -364,29 +385,30 @@ export async function loadPortalData() {
       comment: item.comment,
       date: item.created_at
     })),
-    coupons: coupons.map((item) => ({
+    load("coupons", "/api/coupons/", (item: Record<string, unknown>): Coupon => ({
       id: String(item.id),
       businessId: String(item.business),
       businessName: String(item.business_name ?? ""),
       discountCode: String(item.discount_code ?? ""),
       description: String(item.description ?? ""),
       expiryDate: String(item.expires_at ?? "")
-    })) as Coupon[],
-    events: events.map((item) => ({
+    })),
+    load("events", "/api/events/", (item: Record<string, unknown>): Event => ({
       id: String(item.id),
       title: String(item.title ?? ""),
       date: String(item.schedule_text ?? item.starts_at ?? ""),
       location: String(item.location ?? ""),
       description: String(item.description ?? ""),
       image: String(item.image_url ?? "")
-    })) as Event[],
-    usefulNumbers: usefulNumbers.map((item) => ({
+    })),
+    load("usefulNumbers", "/api/useful-numbers/", (item: Record<string, unknown>): UsefulNumber => ({
       name: String(item.name ?? ""),
       phone: String(item.phone ?? ""),
       description: String(item.description ?? ""),
       category: String(item.category ?? "")
-    })) as UsefulNumber[]
-  };
+    }))
+  ]);
+  return { businesses, reviews, coupons, events, usefulNumbers, unavailable };
 }
 
 export async function loadBackofficeBusinesses() {

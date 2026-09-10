@@ -4,7 +4,7 @@ import {
   RefreshCw, Save, Store, Ticket, UserRound
 } from "lucide-react";
 import {
-  Advertisement, Advertiser, AdvertiserCoupon, AdvertiserPortalData,
+  Advertisement, Advertiser, AdvertiserCoupon, AdvertiserPortalData, AuthenticationError,
   loadAdvertiserPortal, saveAdvertiserCoupon, submitAdvertiserAdvertisement,
   updateAdvertiserBusiness, updateAdvertiserProfile
 } from "../api";
@@ -48,7 +48,7 @@ function businessForm(value: Business) {
   return { ...value, images: value.images ?? [], tags: value.tags ?? [] };
 }
 
-export function AdvertiserPortal({ onLogout }: { onLogout: () => Promise<void> }) {
+export function AdvertiserPortal({ onLogout, onSessionExpired }: { onLogout: () => Promise<void>; onSessionExpired: () => void }) {
   const [data, setData] = useState<AdvertiserPortalData | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
   const [error, setError] = useState("");
@@ -77,6 +77,10 @@ export function AdvertiserPortal({ onLogout }: { onLogout: () => Promise<void> }
       });
       setCouponForm((current) => current.business ? current : emptyCoupon(portal.businesses[0]?.slug ?? ""));
     } catch (reason) {
+      if (reason instanceof AuthenticationError) {
+        onSessionExpired();
+        return;
+      }
       setError(reason instanceof Error ? reason.message : "Nao foi possivel carregar a area do anunciante.");
     } finally {
       setLoading(false);
@@ -159,7 +163,9 @@ export function AdvertiserPortal({ onLogout }: { onLogout: () => Promise<void> }
 
         {tab === "businesses" && <section className="mt-5 space-y-3">{data.businesses.map((business) => <article key={business.id} className="border border-slate-300 bg-white p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold">{business.name}</h2><p className="mt-1 text-sm text-slate-500">{business.street}, {business.number} · {business.status}</p></div><button onClick={() => setEditingBusiness(businessForm(business))} className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50">Editar dados</button></div>
           {editingBusiness?.id === business.id && <form className="mt-5 grid gap-4 border-t border-slate-200 pt-5 sm:grid-cols-2" onSubmit={(event: FormEvent) => { event.preventDefault(); void submit(async () => { const saved = await updateAdvertiserBusiness(editingBusiness); setEditingBusiness(businessForm(saved)); }, "Dados do estabelecimento atualizados."); }}>
-            <label className="text-sm font-semibold">Nome<input required className={field} value={editingBusiness.name} onChange={(event) => setEditingBusiness({ ...editingBusiness, name: event.target.value })} /></label><label className="text-sm font-semibold">Telefone/WhatsApp<input required className={field} value={editingBusiness.phone} onChange={(event) => setEditingBusiness({ ...editingBusiness, phone: event.target.value, whatsapp: event.target.value.replace(/\D/g, "") })} /></label>
+            <label className="text-sm font-semibold">Nome<input required className={field} value={editingBusiness.name} onChange={(event) => setEditingBusiness({ ...editingBusiness, name: event.target.value })} /></label>
+            <label className="text-sm font-semibold">Telefone comercial<input className={field} value={editingBusiness.phone} onChange={(event) => setEditingBusiness({ ...editingBusiness, phone: event.target.value })} /></label>
+            <label className="text-sm font-semibold">WhatsApp<input required className={field} value={editingBusiness.whatsapp} onChange={(event) => setEditingBusiness({ ...editingBusiness, whatsapp: event.target.value })} /></label>
             <label className="text-sm font-semibold sm:col-span-2">Descricao<textarea required className={`${field} h-24 py-2`} value={editingBusiness.description} onChange={(event) => setEditingBusiness({ ...editingBusiness, description: event.target.value })} /></label><label className="text-sm font-semibold sm:col-span-2">Produtos e servicos<textarea className={`${field} h-20 py-2`} value={editingBusiness.servicesProducts ?? ""} onChange={(event) => setEditingBusiness({ ...editingBusiness, servicesProducts: event.target.value })} /></label>
             <label className="text-sm font-semibold">Rua<input className={field} value={editingBusiness.street ?? ""} onChange={(event) => setEditingBusiness({ ...editingBusiness, street: event.target.value })} /></label><label className="text-sm font-semibold">Numero<input className={field} value={editingBusiness.number ?? ""} onChange={(event) => setEditingBusiness({ ...editingBusiness, number: event.target.value })} /></label>
             <label className="text-sm font-semibold">Bairro<input className={field} value={editingBusiness.neighborhood} onChange={(event) => setEditingBusiness({ ...editingBusiness, neighborhood: event.target.value })} /></label><label className="text-sm font-semibold">Horario de atendimento<input className={field} value={editingBusiness.hours} onChange={(event) => setEditingBusiness({ ...editingBusiness, hours: event.target.value })} /></label>

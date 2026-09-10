@@ -37,9 +37,12 @@ export function BusinessFormModal({ onClose, onSubmit }: BusinessFormModalProps)
   const [imageType, setImageType] = useState<"preset" | "custom">("preset");
   const [coverImage, setCoverImage] = useState("");
   const [success, setSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [processingImage, setProcessingImage] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (submitting || processingImage) return;
     if (!name.trim() || !description.trim() || !address.trim() || !phone.trim() || !whatsapp.trim()) return;
 
     // Sanitize whatsapp (remove formatting, non-numeric characters except for leading if applicable)
@@ -51,8 +54,13 @@ export function BusinessFormModal({ onClose, onSubmit }: BusinessFormModalProps)
       .map((t) => t.trim())
       .filter((t) => t.length > 0);
 
-    const imageToUse = coverImage || (imageType === "custom" && customImageUrl.trim() ? customImageUrl : selectedImage);
+    const imageToUse = imageType === "preset" ? selectedImage : coverImage || customImageUrl.trim();
+    if (!imageToUse) {
+      window.alert("Envie uma foto ou informe a URL da imagem.");
+      return;
+    }
 
+    setSubmitting(true);
     try {
       await onSubmit({
         name,
@@ -72,17 +80,22 @@ export function BusinessFormModal({ onClose, onSubmit }: BusinessFormModalProps)
       setSuccess(true);
     } catch (reason) {
       window.alert(reason instanceof Error ? reason.message : "Nao foi possivel enviar.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleCoverUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    setProcessingImage(true);
     try {
       setCoverImage(await optimizeImageFile(file));
       setImageType("custom");
     } catch (reason) {
       window.alert(reason instanceof Error ? reason.message : "Nao foi possivel processar a imagem.");
+    } finally {
+      setProcessingImage(false);
     }
   };
 
@@ -359,7 +372,7 @@ export function BusinessFormModal({ onClose, onSubmit }: BusinessFormModalProps)
               <div>
                 <label className="mb-3 block rounded-xl border-2 border-dashed border-amber-300 bg-amber-50/50 p-4 text-center text-xs font-bold text-stone-700">
                   {coverImage ? "Foto carregada. Selecione para substituir." : "Enviar foto de capa do seu estabelecimento"}
-                  <input type="file" accept="image/*" className="mt-2 block w-full text-xs" onChange={(event) => void handleCoverUpload(event)} />
+                  <input type="file" accept="image/*" disabled={processingImage || submitting} className="mt-2 block w-full text-xs" onChange={(event) => void handleCoverUpload(event)} />
                 </label>
                 {coverImage && <img src={coverImage} alt="Prévia da capa" className="mb-3 h-32 w-full rounded-xl object-cover" />}
                 <label className="block text-xs font-semibold text-stone-500 mb-1.5">Cole a URL da Imagem (Unsplash, Imgur, etc.)</label>
@@ -369,7 +382,7 @@ export function BusinessFormModal({ onClose, onSubmit }: BusinessFormModalProps)
                     type="url"
                     placeholder="https://images.unsplash.com/photo-..."
                     value={customImageUrl}
-                    onChange={(e) => setCustomImageUrl(e.target.value)}
+                    onChange={(e) => { setCustomImageUrl(e.target.value); setCoverImage(""); }}
                     className="w-full rounded-xl border border-stone-200 px-3.5 py-2.5 text-xs text-stone-950 placeholder-stone-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500"
                     id="form-business-custom-img"
                   />
@@ -400,11 +413,12 @@ export function BusinessFormModal({ onClose, onSubmit }: BusinessFormModalProps)
             {/* Submit Action */}
             <button
               type="submit"
+              disabled={submitting || processingImage}
               className="flex w-full items-center justify-center space-x-2 rounded-xl bg-stone-900 py-3.5 text-sm font-semibold text-white shadow-md hover:bg-stone-800 transition-all active:scale-98 cursor-pointer"
               id="form-submit-btn"
             >
               <Send className="h-4.5 w-4.5 text-amber-400" />
-              <span>Cadastrar Minha Empresa</span>
+              <span>{processingImage ? "Processando imagem..." : submitting ? "Enviando cadastro..." : "Cadastrar Minha Empresa"}</span>
             </button>
           </div>
 

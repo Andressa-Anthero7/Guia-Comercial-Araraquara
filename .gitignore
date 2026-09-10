@@ -4,6 +4,7 @@ dist/
 coverage/
 frontend/test-results/
 frontend/playwright-report/
+frontend/integration-results/
 # Local release packages, screenshots and one-off diagnostics.
 output/backoffice-v2/
 output/wildcard-diagnostics/

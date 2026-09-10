@@ -73,6 +73,8 @@ def apply(package, target, root, python=None, check_only=False):
     if not selected:
         raise ValueError("Pacote sem arquivos para esta aplicação.")
     print(f"Aplicação: {root}; versão: {manifest['version']}; arquivos: {len(selected)}")
+    if target == "api" and manifest.get("migrate_core"):
+        print("Este pacote aplica migrações de core. Mantenha um backup do banco antes de instalar.")
     if check_only:
         print("Conferência concluída. Nenhum arquivo alterado.")
         return
@@ -108,6 +110,9 @@ def apply(package, target, root, python=None, check_only=False):
                 temporary.unlink(missing_ok=True)
         if target == "api":
             subprocess.run([python, "manage.py", "check"], cwd=root, check=True)
+            if manifest.get("migrate_core"):
+                # Migrate forward to the available leaf, never target an older schema.
+                subprocess.run([python, "manage.py", "migrate", "core", "--noinput"], cwd=root, check=True)
     except Exception:
         for destination in reversed(modified):
             old = backup / destination.relative_to(root)
@@ -116,6 +121,8 @@ def apply(package, target, root, python=None, check_only=False):
             else:
                 destination.unlink(missing_ok=True)
         print("Falha na aplicação; arquivos anteriores restaurados.", file=sys.stderr)
+        if target == "api" and manifest.get("migrate_core"):
+            print("Confira o estado das migrações: a restauração de arquivos não reverte o banco.", file=sys.stderr)
         raise
     print("Arquivos aplicados. Para a API, reinicie somente sua aplicação pelo painel e confira a versão pública.")
 

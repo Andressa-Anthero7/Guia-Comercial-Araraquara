@@ -11,14 +11,16 @@ import { UsefulNumbersSection } from "./components/UsefulNumbersSection";
 import { BusinessFormModal } from "./components/BusinessFormModal";
 import { BusinessLandingPage } from "./components/BusinessLandingPage";
 import { Footer } from "./components/Footer";
+import { PortalStatus } from "./components/PortalStatus";
+import { refreshCategories } from "./categories";
 import { Backoffice } from "./management/Management";
 import { BackofficeLogin } from "./components/BackofficeLogin";
 import { AdvertiserLogin } from "./components/AdvertiserLogin";
 import { AdvertiserPortal } from "./components/AdvertiserPortal";
 
 import { Business, Review, Coupon, Event, UsefulNumber } from "./types";
-import { INITIAL_BUSINESSES, INITIAL_REVIEWS, COUPONS, EVENTS, USEFUL_NUMBERS } from "./data";
 import {
+  authenticationRedirectUrl,
   createPublicBusiness,
   createReview,
   deleteBackofficeBusiness,
@@ -30,7 +32,8 @@ import {
   logoutBackoffice,
   saveBackofficeBusiness,
   changeBackofficeBusinessStatus,
-  BackofficeSession
+  BackofficeSession,
+  PortalSection
 } from "./api";
 import { SlidersHorizontal, Sparkles, Building2, Store } from "lucide-react";
 
@@ -55,49 +58,23 @@ export default function App() {
   const subdomainPreview = new URLSearchParams(window.location.search).get("subdomain")?.toLowerCase() ?? "";
   const currentTenantSubdomain = tenantSubdomain(window.location.hostname) || subdomainPreview;
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
+  const authenticationUrl = authenticationRedirectUrl(currentPath);
+  const [advertiserLoginNotice, setAdvertiserLoginNotice] = useState("");
   const [isBackofficeAuthenticated, setIsBackofficeAuthenticated] = useState(false);
   const [isSessionChecked, setIsSessionChecked] = useState(false);
   const [backofficeSession, setBackofficeSession] = useState<BackofficeSession>({
     is_authenticated: false, is_backoffice: false, username: "", name: "", email: ""
   });
 
-  // --- Persistent States using LocalStorage Fallbacks ---
-  const [businesses, setBusinesses] = useState<Business[]>(() => {
-    const saved = localStorage.getItem("guiacom_businesses");
-    if (saved) {
-      try {
-        const savedBusinesses = JSON.parse(saved) as Business[];
-        const simulationBusinesses = INITIAL_BUSINESSES.filter((business) =>
-          business.id.startsWith("sim-")
-        );
-        const simulationIds = new Set(simulationBusinesses.map((business) => business.id));
-        return [
-          ...simulationBusinesses,
-          ...savedBusinesses.filter((business) => !simulationIds.has(business.id))
-        ];
-      } catch (e) {
-        console.error("Failed to parse businesses from localStorage", e);
-      }
-    }
-    return INITIAL_BUSINESSES;
-  });
-
-  const [reviews, setReviews] = useState<Review[]>(() => {
-    const saved = localStorage.getItem("guiacom_reviews");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error("Failed to parse reviews from localStorage", e);
-      }
-    }
-    return INITIAL_REVIEWS;
-  });
-
-  const [coupons, setCoupons] = useState<Coupon[]>(COUPONS);
-  const [events, setEvents] = useState<Event[]>(EVENTS);
-  const [usefulNumbers, setUsefulNumbers] = useState<UsefulNumber[]>(USEFUL_NUMBERS);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [usefulNumbers, setUsefulNumbers] = useState<UsefulNumber[]>([]);
   const [isPortalLoaded, setIsPortalLoaded] = useState(false);
+  const [portalUnavailable, setPortalUnavailable] = useState<PortalSection[]>([]);
+  const [portalAttempt, setPortalAttempt] = useState(0);
+  const retryPortal = () => setPortalAttempt((attempt) => attempt + 1);
 
   // --- Filtering & UI States ---
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -116,6 +93,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (authenticationUrl) {
+      window.location.replace(authenticationUrl);
+      return;
+    }
     const isProtectedArea = currentPath.startsWith("/backoffice") || currentPath.startsWith("/anunciante");
     if (!isProtectedArea) return;
     setIsSessionChecked(false);
@@ -126,20 +107,35 @@ export default function App() {
       })
       .catch(() => setIsBackofficeAuthenticated(false))
       .finally(() => setIsSessionChecked(true));
-  }, [currentPath]);
+  }, [currentPath, authenticationUrl]);
 
   useEffect(() => {
-    loadPortalData()
-      .then((data) => {
+    if (currentPath.startsWith("/backoffice") || currentPath.startsWith("/anunciante")) return;
+    let active = true;
+    setIsPortalLoaded(false);
+    Promise.all([loadPortalData(), refreshCategories()])
+      .then(([data, categoriesLoaded]) => {
+        if (!active) return;
         setBusinesses(data.businesses);
         setReviews(data.reviews);
         setCoupons(data.coupons);
         setEvents(data.events);
         setUsefulNumbers(data.usefulNumbers);
+        setPortalUnavailable([...data.unavailable, ...(categoriesLoaded ? [] : ["categories" as const])]);
+        setIsPortalLoaded(true);
       })
-      .catch((error) => console.error("Nao foi possivel carregar a API.", error))
-      .finally(() => setIsPortalLoaded(true));
-  }, []);
+      .catch(() => {
+        if (!active) return;
+        setBusinesses([]);
+        setReviews([]);
+        setCoupons([]);
+        setEvents([]);
+        setUsefulNumbers([]);
+        setPortalUnavailable(["businesses", "reviews", "coupons", "events", "usefulNumbers", "categories"]);
+        setIsPortalLoaded(true);
+      });
+    return () => { active = false; };
+  }, [currentPath, portalAttempt]);
 
   useEffect(() => {
     if (!isBackofficeAuthenticated || !currentPath.startsWith("/backoffice")) return;
@@ -267,17 +263,26 @@ export default function App() {
     );
   };
 
+  if (authenticationUrl) {
+    return <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6"><p role="status" className="text-sm font-semibold text-slate-600">Abrindo a área de acesso...</p></main>;
+  }
+
   if (currentPath.startsWith("/anunciante")) {
     if (!isSessionChecked) {
       return <div className="flex min-h-screen items-center justify-center bg-slate-100 text-sm font-semibold text-slate-600">Carregando acesso...</div>;
     }
     if (!backofficeSession.is_advertiser) {
-      return <AdvertiserLogin onLogin={async (username, password) => {
+      return <AdvertiserLogin notice={advertiserLoginNotice} onLogin={async (username, password) => {
         const session = await loginAdvertiser(username, password);
         setBackofficeSession(session);
+        setAdvertiserLoginNotice("");
       }} onExit={() => { window.location.href = "https://webapp415008.ip-45-79-2-160.cloudezapp.io/"; }} />;
     }
-    return <AdvertiserPortal onLogout={async () => {
+    return <AdvertiserPortal onSessionExpired={() => {
+      setBackofficeSession({ is_authenticated: false, is_backoffice: false, is_advertiser: false, username: "", name: "", email: "" });
+      setIsBackofficeAuthenticated(false);
+      setAdvertiserLoginNotice("Sua sessão expirou. Entre novamente para continuar.");
+    }} onLogout={async () => {
       await logoutBackoffice();
       setBackofficeSession({ is_authenticated: false, is_backoffice: false, is_advertiser: false, username: "", name: "", email: "" });
       window.location.href = "https://webapp415008.ip-45-79-2-160.cloudezapp.io/";
@@ -352,8 +357,11 @@ export default function App() {
     if (!isPortalLoaded) {
       return <div className="flex min-h-screen items-center justify-center bg-stone-50 text-sm font-bold text-stone-600">Carregando pagina da empresa...</div>;
     }
+    if (portalUnavailable.includes("businesses")) {
+      return <main className="min-h-screen bg-stone-50 p-6"><PortalStatus loading={false} unavailable={portalUnavailable} onRetry={retryPortal} /></main>;
+    }
     if (tenantBusiness) {
-      return <BusinessLandingPage business={tenantBusiness} coupons={coupons} />;
+      return <><PortalStatus loading={false} unavailable={portalUnavailable} onRetry={retryPortal} /><BusinessLandingPage business={tenantBusiness} reviews={reviews} coupons={coupons} reviewsUnavailable={portalUnavailable.includes("reviews")} onSubmitReview={handleSubmitReview} /></>;
     }
     return (
       <main className="flex min-h-screen items-center justify-center bg-stone-50 p-6 text-center">
@@ -390,6 +398,7 @@ export default function App() {
       />
 
       {/* 3. Category Grid */}
+      <PortalStatus loading={!isPortalLoaded} unavailable={portalUnavailable} onRetry={retryPortal} />
       <CategoryList
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
@@ -404,9 +413,9 @@ export default function App() {
             <h2 className="font-display text-2xl font-extrabold text-stone-900 tracking-tight">
               Anunciantes
             </h2>
-            <p className="text-xs text-stone-500 mt-1">
+            {isPortalLoaded && !portalUnavailable.includes("businesses") && <p className="text-xs text-stone-500 mt-1">
               Exibindo <span className="font-bold text-stone-800">{filteredBusinesses.length}</span> cadastro(s) encontrados
-            </p>
+            </p>}
           </div>
 
           {/* Active Filtering Pills */}
@@ -474,7 +483,7 @@ export default function App() {
         ) : null}
 
         {/* --- Empty State Notice --- */}
-        {filteredBusinesses.length === 0 && (
+        {isPortalLoaded && !portalUnavailable.includes("businesses") && filteredBusinesses.length === 0 && (
           <div className="text-center py-20 px-6 rounded-3xl border-2 border-dashed border-stone-200 bg-white max-w-xl mx-auto my-8">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-500 mx-auto mb-6">
               <Store className="h-7 w-7" />
@@ -510,17 +519,17 @@ export default function App() {
       </main>
 
       {/* 5. Coupons Section */}
-      <CouponSection
+      {isPortalLoaded && !portalUnavailable.includes("coupons") && <CouponSection
         coupons={coupons}
         businesses={businesses}
         onOpenBusinessDetails={setSelectedBusinessForModal}
-      />
+      />}
 
       {/* 6. Upcoming Events Section */}
-      <EventSection events={events} />
+      {isPortalLoaded && !portalUnavailable.includes("events") && <EventSection events={events} />}
 
       {/* 7. Useful Phone Numbers List */}
-      <UsefulNumbersSection numbers={usefulNumbers} />
+      {isPortalLoaded && !portalUnavailable.includes("usefulNumbers") && <UsefulNumbersSection numbers={usefulNumbers} />}
 
       {/* 8. Elegant Footer */}
       <Footer />
@@ -530,6 +539,7 @@ export default function App() {
         <BusinessModal
           business={selectedBusinessForModal}
           reviews={reviews}
+          reviewsUnavailable={portalUnavailable.includes("reviews")}
           coupons={coupons}
           onClose={closeBusinessDetails}
           onSubmitReview={handleSubmitReview}

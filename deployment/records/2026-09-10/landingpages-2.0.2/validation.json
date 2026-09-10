@@ -1,0 +1,39 @@
+{
+  "version": "2.0.2",
+  "status": "published and verified",
+  "typescript": "passed",
+  "browser_tests_with_mock_api": 27,
+  "browser_tests_with_real_api": 2,
+  "real_review_submission": "saved as unapproved; absent from public reviews",
+  "build": "passed; existing large chunk warning remains",
+  "javascript_kb": 1230.78,
+  "javascript_gzip_kb": 266.53,
+  "visual_review": {
+    "local_desktop": true,
+    "local_mobile": true,
+    "production_desktop": true,
+    "production_mobile": true,
+    "production_modal": true,
+    "production_map_rendered": true
+  },
+  "package": {
+    "path": "output/backoffice-v2/gca-backoffice-2.0.2.zip",
+    "sha256": "ba483265060c7b07f3ff791068744c4c07ac8aa869a2ae3027cf144fca0a75d4",
+    "application_files": 39,
+    "api_files_verified": 31,
+    "public_files_verified": 8,
+    "backend_matches_previous_production": true
+  },
+  "production": {
+    "verified_at": "2026-09-10T11:57:32.399Z",
+    "published_businesses": 7,
+    "core_tables_unchanged": 20,
+    "database_integrity": "ok",
+    "new_migrations": 0,
+    "django_check": "passed",
+    "production_configuration_preserved": true,
+    "browser_errors": 0,
+    "failed_api_responses": 0,
+    "production_form_submissions": 0
+  }
+}

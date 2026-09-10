@@ -1,0 +1,62 @@
+{
+  "version": "2.0.1",
+  "status": "published to API 415078 and public site 415008; verified in production",
+  "scope": [
+    "separate commercial phone and WhatsApp, preserving legacy contact reads",
+    "persist and validate the public registration cover",
+    "serve public gallery images separately with cache versioning",
+    "replace demonstration fallback with loading, partial failure and retry states"
+  ],
+  "backend_tests": 45,
+  "browser_tests_with_mock_api": 22,
+  "browser_tests_with_real_api": 2,
+  "installer_tests": 6,
+  "django_check": "passed",
+  "migration_consistency": "passed; no uncreated migrations",
+  "typescript": "passed",
+  "build": "passed; large JavaScript chunk warning remains",
+  "javascript_bytes_kb": 1228.68,
+  "javascript_gzip_kb": 265.6,
+  "local_database_migration": {
+    "migration": "core.0014_business_phone",
+    "applied": true,
+    "backup": "output/backoffice-v2/local-db-before-2.0.1-20260910-080536.sqlite3",
+    "integrity_check": "ok",
+    "previous_whatsapp_values_preserved": true,
+    "all_core_table_row_counts_preserved": true
+  },
+  "package": {
+    "path": "output/backoffice-v2/gca-backoffice-2.0.1.zip",
+    "application_files": 39,
+    "sha256": "913df6e0bc8bf8a0b3e9f6cd2516fa5df52883d0c567caa0afca3ce371fb500f",
+    "all_manifest_checksums_verified": true,
+    "compiled_frontend_matches_dist": true,
+    "contains_production_configuration_or_database": false
+  },
+  "remaining_review_items": [
+    "advertisement scheduling and pause rules",
+    "marketing integrations",
+    "explicit overdue status in the finance summary endpoint",
+    "HTTPS renewal automation and hosting operation review",
+    "commercial automation and performance improvements"
+  ],
+  "production_verified_at": "2026-09-10T11:27:15.333138+00:00",
+  "production": {
+    "api_application": 415078,
+    "public_application": 415008,
+    "api_files_verified": 31,
+    "public_files_verified": 8,
+    "migration": "core.0014_business_phone",
+    "database_backup": "/home/gca-backend/deploy-backups/backoffice-2.0.1-913df6e0/before.sqlite3",
+    "api_file_backup": "/srv/gca-backend.2d4f02a0.configr.cloud/gca-api-2.0.1-rr364c7p",
+    "public_file_backup": "/srv/guia_comercial_araraquara.2d4f02a0.configr.cloud/gca-public-2.0.1-ex6dsuzz",
+    "reloaded_api_master": 262201,
+    "core_tables_preserved": 20,
+    "business_count": 7,
+    "configuration_preserved": true,
+    "certificate_unchanged": true,
+    "transactional_registration_test_rolled_back": true,
+    "browser_evidence": "production-verification.json",
+    "server_functional_evidence": "functional-verification.json"
+  }
+}

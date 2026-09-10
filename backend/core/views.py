@@ -1,11 +1,8 @@
-import base64
-
 from django.contrib.auth import authenticate, login, logout
 from datetime import timedelta
 import os
 from django.db.models import Q, Sum
-from django.http import HttpResponse
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import mixins, status, viewsets
@@ -13,6 +10,7 @@ from rest_framework.decorators import action, api_view
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from .management import ManagedWritesMixin
+from .images import image_response
 
 from .models import (
     Advertiser,
@@ -241,7 +239,7 @@ def advertiser_business(request, slug):
         return Response({"detail": "Estabelecimento nao encontrado."}, status=status.HTTP_404_NOT_FOUND)
     allowed_fields = {
         "name", "description", "services_products", "category", "street", "number",
-        "complement", "neighborhood", "city", "state", "postal_code", "phone_whatsapp",
+        "complement", "neighborhood", "city", "state", "postal_code", "phone", "phone_whatsapp",
         "email", "website", "instagram", "logo_image", "image_url", "images",
         "opening_hours", "tags",
     }
@@ -316,7 +314,7 @@ class BusinessViewSet(
         queryset = (
             Business.objects.filter(status=Business.Status.ACTIVE)
             .select_related("category")
-            .prefetch_related("tags")
+            .prefetch_related("tags", "images")
         )
 
         category = self.request.query_params.get("category")
@@ -351,20 +349,13 @@ class BusinessViewSet(
     def cover(self, request, slug=None):
         """Entrega capas Base64 como imagem separada e cacheavel."""
         business = self.get_object()
-        image_url = business.image_url or ""
-        if not image_url:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        if not image_url.startswith("data:"):
-            return redirect(image_url)
-        try:
-            header, encoded_image = image_url.split(",", 1)
-            content_type = header[5:].split(";", 1)[0] or "image/jpeg"
-            image_data = base64.b64decode(encoded_image, validate=True)
-        except (ValueError, base64.binascii.Error):
-            return Response({"detail": "Imagem invalida."}, status=status.HTTP_404_NOT_FOUND)
-        response = HttpResponse(image_data, content_type=content_type)
-        response["Cache-Control"] = "public, max-age=3600"
-        return response
+        return image_response(business.image_url)
+
+    @action(detail=True, methods=["get"], url_path=r"images/(?P<image_id>[0-9]+)")
+    def gallery_image(self, request, slug=None, image_id=None):
+        business = self.get_object()
+        item = get_object_or_404(business.images, pk=image_id)
+        return image_response(item.image)
 
 
 class BackofficeBusinessViewSet(ManagedWritesMixin, viewsets.ModelViewSet):

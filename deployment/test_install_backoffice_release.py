@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 spec = importlib.util.spec_from_file_location("installer", Path(__file__).with_name("install_backoffice_release.py"))
 installer = importlib.util.module_from_spec(spec)
@@ -60,6 +60,29 @@ class InstallerTests(unittest.TestCase):
             installer.apply(self.package, "api", self.root, "python")
         with self.assertRaises(ValueError):
             installer.inside(self.root, self.root / "../other-project/file")
+
+    def test_package_with_schema_change_checks_then_migrates_forward(self):
+        path = self.package / "manifest.json"
+        manifest = json.loads(path.read_text())
+        manifest["migrate_core"] = True
+        path.write_text(json.dumps(manifest))
+        with patch.object(installer.subprocess, "run") as run:
+            installer.apply(self.package, "api", self.root, "python")
+        self.assertEqual(run.call_args_list, [
+            call(["python", "manage.py", "check"], cwd=self.root, check=True),
+            call(["python", "manage.py", "migrate", "core", "--noinput"], cwd=self.root, check=True),
+        ])
+
+    def test_failed_migration_restores_code(self):
+        path = self.package / "manifest.json"
+        manifest = json.loads(path.read_text())
+        manifest["migrate_core"] = True
+        path.write_text(json.dumps(manifest))
+        with patch.object(installer.subprocess, "run", side_effect=[None, subprocess.CalledProcessError(1, ["migrate"])]):
+            with self.assertRaises(subprocess.CalledProcessError):
+                installer.apply(self.package, "api", self.root, "python")
+        self.assertTrue((self.root / "core/views.py").read_text().endswith("original"))
+        self.assertFalse((self.root / "core/management.py").exists())
 
 
 if __name__ == "__main__":

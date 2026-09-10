@@ -1,0 +1,50 @@
+{
+  "verifiedAt": "2026-09-10T11:24:57.831Z",
+  "version": "2.0.1",
+  "checks": [
+    {
+      "company": "M Espetinhos",
+      "url": "https://m-espetinhos.guiacomararaquara.com.br/",
+      "status": 200,
+      "httpsVerified": true,
+      "whatsappMatchesSavedContact": true,
+      "imagesLoaded": 1
+    },
+    {
+      "company": "Alcântara Barbearia",
+      "url": "https://barbearia-alcantara.guiacomararaquara.com.br/",
+      "status": 200,
+      "httpsVerified": true,
+      "whatsappMatchesSavedContact": true,
+      "imagesLoaded": 1
+    },
+    {
+      "portal": "https://guiacomararaquara.com.br/",
+      "businessCount": 7,
+      "newBundle": true
+    },
+    {
+      "backoffice": "https://webapp415078.ip-45-79-2-160.cloudezapp.io/backoffice/",
+      "loginAvailable": true
+    },
+    {
+      "anonymousAdministrativeRequest": 403
+    },
+    {
+      "partialOutage": "simulated in browser only",
+      "businessesRemainVisible": true,
+      "retryRecovered": true
+    },
+    {
+      "businessOutage": "simulated in browser only",
+      "noDemonstrationFallback": true
+    }
+  ],
+  "certificate": {
+    "serial": "05E9D91DE49234991E704B62B9D63E68F55E",
+    "validTo": "Dec  8 21:53:08 2026 GMT",
+    "authorized": true
+  },
+  "browserErrors": [],
+  "failedApiResponses": []
+}

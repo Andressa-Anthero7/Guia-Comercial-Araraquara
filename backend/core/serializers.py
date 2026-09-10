@@ -1,7 +1,9 @@
 import re
 
+from django.db import transaction
 from rest_framework import serializers
 from .management_rules import ManagementValidationMixin
+from .images import PublicImageField, public_image_url
 
 from .models import (
     Advertiser,
@@ -69,7 +71,7 @@ class BusinessSerializer(serializers.ModelSerializer):
     reviews_count = serializers.IntegerField(read_only=True)
     # A listagem publica nao deve carregar imagens Base64 junto ao JSON.
     # A capa e servida pela rota dedicada e cacheavel.
-    image_url = serializers.SerializerMethodField(read_only=True)
+    image_url = PublicImageField(required=False, allow_blank=True)
     images = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -92,6 +94,7 @@ class BusinessSerializer(serializers.ModelSerializer):
             "state",
             "postal_code",
             "full_address",
+            "phone",
             "phone_whatsapp",
             "email",
             "website",
@@ -111,6 +114,7 @@ class BusinessSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("slug", "status", "is_featured", "plan_type", "public_subdomain", "meta_pixel_id", "google_analytics_id", "google_ads_id", "created_at", "updated_at")
 
+    @transaction.atomic
     def create(self, validated_data):
         tag_names = validated_data.pop("tags", [])
         validated_data["status"] = Business.Status.PENDING
@@ -130,15 +134,27 @@ class BusinessSerializer(serializers.ModelSerializer):
         return [tag.name for tag in obj.tags.all()]
 
     def get_image_url(self, obj):
-        image_url = obj.image_url or ""
-        if not image_url.startswith("data:"):
-            return image_url
-        request = self.context.get("request")
-        path = f"/api/businesses/{obj.slug}/cover/"
-        return request.build_absolute_uri(path) if request else path
+        return public_image_url(
+            obj.image_url or "", f"/api/businesses/{obj.slug}/cover/", self.context.get("request")
+        )
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["image_url"] = self.get_image_url(instance)
+        return data
 
     def get_images(self, obj):
-        return []
+        return [
+            {
+                "id": item.pk,
+                "image": self.get_image_url(obj) if item.image == obj.image_url else public_image_url(
+                    item.image, f"/api/businesses/{obj.slug}/images/{item.pk}/", self.context.get("request")
+                ),
+                "alt_text": item.alt_text,
+                "order": item.order,
+            }
+            for item in obj.images.all()
+        ]
 
 
 class BackofficeBusinessSerializer(ManagementValidationMixin, serializers.ModelSerializer):
@@ -189,6 +205,7 @@ class BackofficeBusinessSerializer(ManagementValidationMixin, serializers.ModelS
             "state",
             "postal_code",
             "full_address",
+            "phone",
             "phone_whatsapp",
             "email",
             "website",

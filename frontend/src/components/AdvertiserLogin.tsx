@@ -2,11 +2,12 @@ import { FormEvent, useState } from "react";
 import { ArrowLeft, Eye, EyeOff, LockKeyhole, Store } from "lucide-react";
 
 interface AdvertiserLoginProps {
+  notice?: string;
   onLogin: (username: string, password: string) => Promise<void>;
   onExit: () => void;
 }
 
-export function AdvertiserLogin({ onLogin, onExit }: AdvertiserLoginProps) {
+export function AdvertiserLogin({ onLogin, onExit, notice }: AdvertiserLoginProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -32,6 +33,7 @@ export function AdvertiserLogin({ onLogin, onExit }: AdvertiserLoginProps) {
         <div className="flex h-12 w-12 items-center justify-center rounded-md bg-slate-950 text-amber-400"><Store className="h-6 w-6" /></div>
         <h1 className="mt-5 text-2xl font-extrabold text-slate-950">Area do anunciante</h1>
         <p className="mt-2 text-sm text-slate-500">Acesse seus estabelecimentos, anuncios, cupons e cobrancas.</p>
+        {notice && <p role="alert" className="mt-4 rounded-md bg-amber-50 p-3 text-sm text-amber-900">{notice}</p>}
         <form className="mt-6 space-y-4" onSubmit={(event) => void submit(event)}>
           <label className="block text-sm font-semibold text-slate-700">Usuario
             <input autoComplete="username" className="mt-1.5 h-11 w-full rounded-md border border-slate-300 px-3 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100" value={username} onChange={(event) => setUsername(event.target.value)} required />
