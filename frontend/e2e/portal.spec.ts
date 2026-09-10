@@ -144,7 +144,9 @@ test("permite pesquisar e abrir os detalhes de um anunciante publico", async ({ 
 });
 
 test("abre a pagina personalizada quando o host corresponde ao subdominio do anunciante", async ({ page }) => {
-  await page.goto("http://cafe-central.localhost:3000/");
+  const url = new URL(process.env.GCA_E2E_ORIGIN || "http://127.0.0.1:3000");
+  url.hostname = "cafe-central.localhost";
+  await page.goto(url.href);
 
   await expect(page.getByRole("heading", { name: "Cafe Central" })).toBeVisible();
   await expect(page.getByText("Cafe especial e paes artesanais.")).toBeVisible();
@@ -388,24 +390,51 @@ test("autentica o anunciante e exibe sua area restrita", async ({ page }) => {
   await expect(page.getByText(/Profissional/)).toBeVisible();
 });
 
-test("áreas restritas abertas pelo guia encaminham ao servidor antes da autenticação", async ({ page }) => {
+test("areas restritas permanecem no dominio do guia com API no mesmo dominio", async ({ page }) => {
   const authRequests: string[] = [];
   page.on("request", (request) => {
     if (/\/api\/(auth|advertiser)\//.test(request.url())) authRequests.push(request.url());
   });
   await page.route("https://guiacomararaquara.com.br/**", async (route) => {
     const url = new URL(route.request().url());
-    const response = await route.fetch({ url: `http://127.0.0.1:3000${url.pathname}${url.search}` });
+    if (url.pathname.startsWith("/api/")) return route.fallback();
+    const response = await route.fetch({ url: `${process.env.GCA_E2E_ORIGIN || "http://127.0.0.1:3000"}${url.pathname}${url.search}` });
     await route.fulfill({ response });
   });
-  const authOrigin = "https://webapp415078.ip-45-79-2-160.cloudezapp.io";
-  await page.route(`${authOrigin}/**`, (route) => route.fulfill({ contentType: "text/html", body: "<h1>Acesso no servidor</h1>" }));
+  const authOrigin = "https://guiacomararaquara.com.br";
   for (const path of ["/anunciante/?origem=guia", "/backoffice/gestao/advertisers"]) {
     await page.goto(`https://guiacomararaquara.com.br${path}`);
     await expect(page).toHaveURL(`${authOrigin}${path}`);
-    await expect(page.getByRole("heading", { name: "Acesso no servidor" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Entrar", exact: true })).toBeVisible();
   }
-  expect(authRequests).toEqual([]);
+  await page.goto(`${authOrigin}/anunciante/`);
+  await page.getByLabel("Usuario", { exact: true }).fill("anunciante");
+  await page.getByLabel("Senha", { exact: true }).fill("senha-de-teste");
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Area do Anunciante", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Sair", exact: true }).click();
+  await expect(page).toHaveURL(`${authOrigin}/`);
+  await expect(page.getByText("Cafe Central", { exact: true })).toBeVisible();
+  expect(authRequests.length).toBeGreaterThan(0);
+  expect(authRequests.every(url => url.startsWith(`${authOrigin}/api/`))).toBe(true);
+});
+
+test("endereco antigo e subdominios encaminham o login para o dominio do guia", async ({ page }) => {
+  const guideOrigin = "https://guiacomararaquara.com.br";
+  const oldOrigins = ["https://webapp415078.ip-45-79-2-160.cloudezapp.io", "https://m-espetinhos.guiacomararaquara.com.br", "https://www.guiacomararaquara.com.br"];
+  for (const origin of [guideOrigin, ...oldOrigins]) {
+    await page.route(`${origin}/**`, async (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname.startsWith("/api/")) return route.fallback();
+      const response = await route.fetch({ url: `${process.env.GCA_E2E_ORIGIN || "http://127.0.0.1:3000"}${url.pathname}${url.search}` });
+      await route.fulfill({ response });
+    });
+  }
+  for (const origin of oldOrigins) {
+    await page.goto(`${origin}/anunciante/?origem=antigo#cadastro`);
+    await expect(page).toHaveURL(`${guideOrigin}/anunciante/?origem=antigo#cadastro`);
+    await expect(page.getByRole("button", { name: "Entrar", exact: true })).toBeVisible();
+  }
 });
 
 test("sessão perdida no painel volta ao login e permite entrar novamente", async ({ page }) => {

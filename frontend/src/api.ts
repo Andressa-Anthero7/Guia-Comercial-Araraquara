@@ -2,14 +2,15 @@ import { Business, Coupon, Event, Review, UsefulNumber } from "./types";
 import { whatsappNumber } from "./utils/contact";
 
 const BACKEND_ORIGIN = "https://webapp415078.ip-45-79-2-160.cloudezapp.io";
+const GUIDE_ORIGIN = "https://guiacomararaquara.com.br";
 const isLocalDevelopmentHost =
   ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname) || window.location.hostname.endsWith(".localhost");
 const API_ORIGIN =
-  isLocalDevelopmentHost || window.location.origin === BACKEND_ORIGIN ? "" : BACKEND_ORIGIN;
+  isLocalDevelopmentHost || [GUIDE_ORIGIN, BACKEND_ORIGIN].includes(window.location.origin) ? "" : BACKEND_ORIGIN;
 
 export function authenticationRedirectUrl(pathname: string) {
-  if (!API_ORIGIN || !/^\/(anunciante|backoffice)(?:\/|$)/.test(pathname)) return "";
-  return `${BACKEND_ORIGIN}${pathname}${window.location.search}${window.location.hash}`;
+  if (isLocalDevelopmentHost || window.location.origin === GUIDE_ORIGIN || !/^\/(anunciante|backoffice)(?:\/|$)/.test(pathname)) return "";
+  return `${GUIDE_ORIGIN}${pathname}${window.location.search}${window.location.hash}`;
 }
 
 export class AuthenticationError extends Error {

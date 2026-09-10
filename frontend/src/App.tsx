@@ -276,7 +276,7 @@ export default function App() {
         const session = await loginAdvertiser(username, password);
         setBackofficeSession(session);
         setAdvertiserLoginNotice("");
-      }} onExit={() => { window.location.href = "https://webapp415008.ip-45-79-2-160.cloudezapp.io/"; }} />;
+      }} onExit={() => { window.location.href = "https://guiacomararaquara.com.br/"; }} />;
     }
     return <AdvertiserPortal onSessionExpired={() => {
       setBackofficeSession({ is_authenticated: false, is_backoffice: false, is_advertiser: false, username: "", name: "", email: "" });
@@ -285,7 +285,7 @@ export default function App() {
     }} onLogout={async () => {
       await logoutBackoffice();
       setBackofficeSession({ is_authenticated: false, is_backoffice: false, is_advertiser: false, username: "", name: "", email: "" });
-      window.location.href = "https://webapp415008.ip-45-79-2-160.cloudezapp.io/";
+      window.location.href = "https://guiacomararaquara.com.br/";
     }} />;
   }
 
@@ -320,7 +320,7 @@ export default function App() {
             setIsBackofficeAuthenticated(true);
           }}
           onExit={() => {
-            window.location.href = "https://webapp415008.ip-45-79-2-160.cloudezapp.io/";
+            window.location.href = "https://guiacomararaquara.com.br/";
           }}
         />
       );
@@ -336,7 +336,7 @@ export default function App() {
         }}
         session={backofficeSession}
         onExit={async () => {
-          window.location.href = "https://webapp415008.ip-45-79-2-160.cloudezapp.io/";
+          window.location.href = "https://guiacomararaquara.com.br/";
         }}
         onLogout={async () => {
           await logoutBackoffice();
@@ -344,7 +344,7 @@ export default function App() {
           setBackofficeSession({
             is_authenticated: false, is_backoffice: false, username: "", name: "", email: ""
           });
-          window.location.href = "https://webapp415008.ip-45-79-2-160.cloudezapp.io/";
+          window.location.href = "https://guiacomararaquara.com.br/";
         }}
       />
     );
@@ -382,7 +382,7 @@ export default function App() {
         onOpenRegisterModal={() => setIsRegisterModalOpen(true)}
         onOpenBackoffice={() => {
           window.location.href =
-            "https://webapp415078.ip-45-79-2-160.cloudezapp.io/backoffice/";
+            "https://guiacomararaquara.com.br/backoffice/";
         }}
         isBackofficeAuthenticated={!isNativeApp}
         activeSection={activeSection}
