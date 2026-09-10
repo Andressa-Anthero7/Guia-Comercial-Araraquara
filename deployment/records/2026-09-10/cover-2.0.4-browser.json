@@ -1,0 +1,34 @@
+{
+  "mode": "production",
+  "verifiedAt": "2026-09-10T23:26:24.204Z",
+  "checks": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "https://m-espetinhos.guiacomararaquara.com.br/",
+      "coverHeight": 256,
+      "status": 200,
+      "scripts": [
+        "https://m-espetinhos.guiacomararaquara.com.br/assets/index-5Y-jcNlZ.js"
+      ],
+      "screenshot": "output/backoffice-v2/cover-2.0.4/production-1440.png",
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "url": "https://m-espetinhos.guiacomararaquara.com.br/",
+      "coverHeight": 224,
+      "status": 200,
+      "scripts": [
+        "https://m-espetinhos.guiacomararaquara.com.br/assets/index-5Y-jcNlZ.js"
+      ],
+      "screenshot": "output/backoffice-v2/cover-2.0.4/production-390.png",
+      "errors": []
+    }
+  ]
+}

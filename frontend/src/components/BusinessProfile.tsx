@@ -99,7 +99,7 @@ export function BusinessProfile({ business, reviews, coupons, reviewsUnavailable
 
   return (
     <>
-      <div className={`relative isolate flex shrink-0 items-end overflow-hidden bg-stone-900 ${isPage ? "min-h-72 sm:min-h-96" : "min-h-56 sm:min-h-72"}`}>
+      <div className={`relative isolate flex shrink-0 items-end overflow-hidden bg-stone-900 ${isPage ? "min-h-56 sm:min-h-64" : "min-h-56 sm:min-h-72"}`}>
         {business.image ? (
           <img src={business.image} alt={business.name} className="absolute inset-0 -z-20 h-full w-full object-cover" referrerPolicy="no-referrer" fetchPriority="high" />
         ) : <Store className="absolute right-8 top-8 -z-20 h-40 w-40 text-stone-700" aria-hidden="true" />}
