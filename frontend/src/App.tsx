@@ -11,7 +11,7 @@ import { UsefulNumbersSection } from "./components/UsefulNumbersSection";
 import { BusinessFormModal } from "./components/BusinessFormModal";
 import { BusinessLandingPage } from "./components/BusinessLandingPage";
 import { Footer } from "./components/Footer";
-import { Backoffice } from "./components/Backoffice";
+import { Backoffice } from "./management/Management";
 import { BackofficeLogin } from "./components/BackofficeLogin";
 import { AdvertiserLogin } from "./components/AdvertiserLogin";
 import { AdvertiserPortal } from "./components/AdvertiserPortal";
@@ -131,11 +131,11 @@ export default function App() {
   useEffect(() => {
     loadPortalData()
       .then((data) => {
-        if (data.businesses.length) setBusinesses(data.businesses);
-        if (data.reviews.length) setReviews(data.reviews);
-        if (data.coupons.length) setCoupons(data.coupons);
-        if (data.events.length) setEvents(data.events);
-        if (data.usefulNumbers.length) setUsefulNumbers(data.usefulNumbers);
+        setBusinesses(data.businesses);
+        setReviews(data.reviews);
+        setCoupons(data.coupons);
+        setEvents(data.events);
+        setUsefulNumbers(data.usefulNumbers);
       })
       .catch((error) => console.error("Nao foi possivel carregar a API.", error))
       .finally(() => setIsPortalLoaded(true));

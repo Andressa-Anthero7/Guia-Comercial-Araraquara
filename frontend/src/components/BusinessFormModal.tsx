@@ -1,6 +1,7 @@
-import { useState, FormEvent, ChangeEvent } from "react";
+import { useState, useEffect, FormEvent, ChangeEvent } from "react";
 import { Business, Category } from "../types";
-import { CATEGORIES, NEIGHBORHOODS } from "../data";
+import { NEIGHBORHOODS } from "../data";
+import { useCategories } from "../categories";
 import { X, Send, CheckCircle2, Sparkles, Image as ImageIcon } from "lucide-react";
 import { optimizeImageFile } from "../utils/content";
 
@@ -19,9 +20,11 @@ const PRESET_IMAGES = [
 ];
 
 export function BusinessFormModal({ onClose, onSubmit }: BusinessFormModalProps) {
+  const CATEGORIES = useCategories();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState(CATEGORIES[0].slug);
+  const [category, setCategory] = useState(CATEGORIES[0]?.slug || "");
+  useEffect(() => { if (!CATEGORIES.some(item => item.slug === category)) setCategory(CATEGORIES[0]?.slug || ""); }, [CATEGORIES, category]);
   const [address, setAddress] = useState("");
   const [neighborhood, setNeighborhood] = useState(NEIGHBORHOODS[0]);
   const [phone, setPhone] = useState("");

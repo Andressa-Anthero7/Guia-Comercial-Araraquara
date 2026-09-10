@@ -4,10 +4,11 @@ import {
   RefreshCw, Save, Store, Ticket, UserRound
 } from "lucide-react";
 import {
-  Advertisement, Advertiser, AdvertiserCoupon, AdvertiserPortalData, Business,
+  Advertisement, Advertiser, AdvertiserCoupon, AdvertiserPortalData,
   loadAdvertiserPortal, saveAdvertiserCoupon, submitAdvertiserAdvertisement,
   updateAdvertiserBusiness, updateAdvertiserProfile
 } from "../api";
+import { Business } from "../types";
 
 type Tab = "overview" | "profile" | "businesses" | "ads" | "coupons" | "finance";
 
@@ -139,10 +140,10 @@ export function AdvertiserPortal({ onLogout }: { onLogout: () => Promise<void> }
         </div>
         <div className="mt-5 flex items-center justify-between gap-3"><div>{error && <p className="text-sm font-semibold text-rose-700">{error}</p>}{notice && <p className="text-sm font-semibold text-emerald-700">{notice}</p>}</div><button onClick={() => void reload()} className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Atualizar</button></div>
 
-        {tab === "overview" && <section className="mt-5 space-y-5"><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{[
+        {tab === "overview" && <section className="mt-5 space-y-5"><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{([
           ["Estabelecimentos", data.businesses.length, Building2], ["Anuncios", data.advertisements.length, Megaphone],
           ["Em aberto", money(finance.open), CreditCard], ["Vencidas", finance.overdueCount, FileText]
-        ].map(([label, value, Icon]) => { const CardIcon = Icon as typeof Store; return <div key={String(label)} className="border border-slate-300 bg-white p-4 shadow-sm"><div className="flex items-center justify-between text-xs font-bold uppercase tracking-wide text-slate-500"><span>{label}</span><CardIcon className="h-4 w-4 text-slate-400" /></div><div className="mt-3 text-2xl font-bold tabular-nums">{value}</div></div>; })}</div>
+        ] as const).map(([label, value, Icon]) => { const CardIcon = Icon as typeof Store; return <div key={String(label)} className="border border-slate-300 bg-white p-4 shadow-sm"><div className="flex items-center justify-between text-xs font-bold uppercase tracking-wide text-slate-500"><span>{label}</span><CardIcon className="h-4 w-4 text-slate-400" /></div><div className="mt-3 text-2xl font-bold tabular-nums">{value}</div></div>; })}</div>
           <div className="grid gap-4 lg:grid-cols-2"><section className="border border-slate-300 bg-white p-4"><h2 className="font-bold">Situacao comercial</h2><div className="mt-3 space-y-3 text-sm">{data.subscriptions.length ? data.subscriptions.map((item) => <div key={item.id} className="flex items-start justify-between border-b border-slate-100 pb-3 last:border-0"><span><b>{item.business_name}</b><br/><span className="text-slate-500">{item.plan_name} · proximo vencimento {dateLabel(item.next_due_date)}</span></span><b>{money(item.agreed_price)}</b></div>) : <p className="text-slate-500">Nenhum contrato cadastrado.</p>}</div></section>
           <section className="border border-slate-300 bg-white p-4"><h2 className="font-bold">Pendencias</h2><div className="mt-3 space-y-2 text-sm"><p className={finance.overdueCount ? "font-semibold text-rose-700" : "text-slate-600"}>{finance.overdueCount ? `${finance.overdueCount} cobranca(s) vencida(s): ${money(finance.overdue)}` : "Nenhuma cobranca vencida."}</p><p className="text-slate-600">Para pagamento presencial ou PIX, use os dados informados pelo Guia Comercial.</p></div></section></div></section>}
 

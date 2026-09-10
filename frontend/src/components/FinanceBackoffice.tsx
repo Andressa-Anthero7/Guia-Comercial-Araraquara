@@ -44,7 +44,8 @@ export function FinanceBackoffice({ businesses }: { businesses: Business[] }) {
   });
   const [planForm, setPlanForm] = useState<AdvertisingPlan>({
     id: 0, name: "", description: "", price: "0.00", billing_cycle: "monthly",
-    max_ads: 1, featured: false, is_active: true
+    max_ads: 1, featured: false, is_active: true, plan_type: "paid", max_images: 5,
+    includes_coupons: true, includes_marketing: true, includes_custom_page: true
   });
   const [subscriptionForm, setSubscriptionForm] = useState<AdvertisingSubscription>({
     id: 0, advertiser: 0, advertiser_name: "", business: 0, business_name: "", advertisement: null,

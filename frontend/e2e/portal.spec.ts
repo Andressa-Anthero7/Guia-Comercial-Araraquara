@@ -176,6 +176,7 @@ test("autentica no backoffice e filtra estabelecimentos por status", async ({ pa
   await page.locator('input[type="password"]').fill("senha-de-teste");
   await page.getByRole("button", { name: "Entrar" }).click();
 
+  await page.getByRole("button", { name: "Estabelecimentos", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Estabelecimentos" })).toBeVisible();
   await page.locator("#backoffice-status-filter").selectOption("pending");
   const businessTable = page.getByRole("table");

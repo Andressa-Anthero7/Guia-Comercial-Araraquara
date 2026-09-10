@@ -12,6 +12,7 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action, api_view
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
+from .management import ManagedWritesMixin
 
 from .models import (
     Advertiser,
@@ -74,6 +75,7 @@ def backoffice_login(request):
     return Response({
         "is_authenticated": True,
         "is_backoffice": True,
+        "is_superuser": user.is_superuser,
         "username": user.get_username(),
         "name": user.get_full_name(),
         "email": user.email,
@@ -97,6 +99,7 @@ def backoffice_session(request):
         {
             "is_authenticated": user.is_authenticated,
             "is_backoffice": user.is_authenticated and user.is_staff,
+            "is_superuser": user.is_authenticated and user.is_superuser,
             "is_advertiser": is_advertiser,
             "username": user.get_username() if user.is_authenticated else "",
             "name": user.get_full_name() if user.is_authenticated else "",
@@ -133,6 +136,7 @@ def advertiser_login(request):
     return Response({
         "is_authenticated": True,
         "is_backoffice": user.is_staff,
+        "is_superuser": user.is_superuser,
         "is_advertiser": True,
         "username": user.get_username(),
         "name": user.get_full_name() or advertiser.contact_name or advertiser.name,
@@ -363,7 +367,7 @@ class BusinessViewSet(
         return response
 
 
-class BackofficeBusinessViewSet(viewsets.ModelViewSet):
+class BackofficeBusinessViewSet(ManagedWritesMixin, viewsets.ModelViewSet):
     serializer_class = BackofficeBusinessSerializer
     permission_classes = [IsAdminUser]
     lookup_field = "slug"
@@ -372,7 +376,7 @@ class BackofficeBusinessViewSet(viewsets.ModelViewSet):
         return (
             Business.objects.all()
             .select_related("category")
-            .prefetch_related("tags", "reviews")
+            .prefetch_related("tags", "reviews", "images")
             .order_by("-updated_at")
         )
 
@@ -412,7 +416,7 @@ class CouponViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
 
 
-class BackofficeCouponViewSet(viewsets.ModelViewSet):
+class BackofficeCouponViewSet(ManagedWritesMixin, viewsets.ModelViewSet):
     serializer_class = BackofficeCouponSerializer
     permission_classes = [IsAdminUser]
 
@@ -458,7 +462,7 @@ class EventViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
 
 
-class BackofficeEventViewSet(viewsets.ModelViewSet):
+class BackofficeEventViewSet(ManagedWritesMixin, viewsets.ModelViewSet):
     serializer_class = BackofficeEventSerializer
     permission_classes = [IsAdminUser]
 
@@ -503,7 +507,7 @@ class UsefulNumberViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
 
 
-class BackofficeUsefulNumberViewSet(viewsets.ModelViewSet):
+class BackofficeUsefulNumberViewSet(ManagedWritesMixin, viewsets.ModelViewSet):
     serializer_class = BackofficeUsefulNumberSerializer
     permission_classes = [IsAdminUser]
 
@@ -531,7 +535,7 @@ class BackofficeUsefulNumberViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-class AdvertiserViewSet(viewsets.ModelViewSet):
+class AdvertiserViewSet(ManagedWritesMixin, viewsets.ModelViewSet):
     serializer_class = AdvertiserSerializer
     permission_classes = [IsAdminUser]
 
@@ -539,13 +543,13 @@ class AdvertiserViewSet(viewsets.ModelViewSet):
         return Advertiser.objects.prefetch_related("businesses").order_by("name")
 
 
-class AdvertisingPlanViewSet(viewsets.ModelViewSet):
+class AdvertisingPlanViewSet(ManagedWritesMixin, viewsets.ModelViewSet):
     serializer_class = AdvertisingPlanSerializer
     permission_classes = [IsAdminUser]
     queryset = AdvertisingPlan.objects.all()
 
 
-class AdvertisingSubscriptionViewSet(viewsets.ModelViewSet):
+class AdvertisingSubscriptionViewSet(ManagedWritesMixin, viewsets.ModelViewSet):
     serializer_class = AdvertisingSubscriptionSerializer
     permission_classes = [IsAdminUser]
 
@@ -555,7 +559,7 @@ class AdvertisingSubscriptionViewSet(viewsets.ModelViewSet):
         )
 
 
-class InvoiceViewSet(viewsets.ModelViewSet):
+class InvoiceViewSet(ManagedWritesMixin, viewsets.ModelViewSet):
     serializer_class = InvoiceSerializer
     permission_classes = [IsAdminUser]
 
@@ -565,7 +569,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         )
 
 
-class AdvertisementViewSet(viewsets.ModelViewSet):
+class AdvertisementViewSet(ManagedWritesMixin, viewsets.ModelViewSet):
     serializer_class = AdvertisementSerializer
     permission_classes = [IsAdminUser]
 

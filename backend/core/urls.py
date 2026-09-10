@@ -1,5 +1,6 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+from .management import ManagedCategoryViewSet, ManagedTagViewSet, ManagedReviewViewSet, ManagedUserViewSet
 
 from .views import (
     BackofficeBusinessViewSet,
@@ -35,6 +36,10 @@ from .views import (
 )
 
 router = DefaultRouter()
+router.register("backoffice/categories", ManagedCategoryViewSet, basename="backoffice-category")
+router.register("backoffice/tags", ManagedTagViewSet, basename="backoffice-tag")
+router.register("backoffice/reviews", ManagedReviewViewSet, basename="backoffice-review")
+router.register("backoffice/users", ManagedUserViewSet, basename="backoffice-user")
 router.register("categories", CategoryViewSet, basename="category")
 router.register("businesses", BusinessViewSet, basename="business")
 router.register("reviews", ReviewViewSet, basename="review")

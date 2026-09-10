@@ -1,6 +1,7 @@
 import re
 
 from rest_framework import serializers
+from .management_rules import ManagementValidationMixin
 
 from .models import (
     Advertiser,
@@ -140,7 +141,7 @@ class BusinessSerializer(serializers.ModelSerializer):
         return []
 
 
-class BackofficeBusinessSerializer(serializers.ModelSerializer):
+class BackofficeBusinessSerializer(ManagementValidationMixin, serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
         slug_field="slug",
         queryset=Category.objects.all(),
@@ -216,6 +217,7 @@ class BackofficeBusinessSerializer(serializers.ModelSerializer):
         return normalize_tag_names(value)
 
     def validate(self, attrs):
+        attrs = super().validate(attrs)
         plan_type = attrs.get("plan_type", getattr(self.instance, "plan_type", Business.PlanType.FREE))
         paid_only = ("public_subdomain", "meta_pixel_id", "google_analytics_id", "google_ads_id")
         paid_values = {
@@ -235,6 +237,8 @@ class BackofficeBusinessSerializer(serializers.ModelSerializer):
         subdomain = value.strip().lower()
         if not subdomain:
             return ""
+        if not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", subdomain):
+            raise serializers.ValidationError("Use até 63 letras minúsculas, números ou hífens, sem hífen no início ou fim.")
         if subdomain in {"www", "api", "admin", "backoffice", "mail"}:
             raise serializers.ValidationError("Este subdominio e reservado.")
         queryset = Business.objects.filter(public_subdomain__iexact=subdomain)
@@ -326,7 +330,7 @@ class CouponSerializer(serializers.ModelSerializer):
         )
 
 
-class BackofficeCouponSerializer(serializers.ModelSerializer):
+class BackofficeCouponSerializer(ManagementValidationMixin, serializers.ModelSerializer):
     business = serializers.SlugRelatedField(
         slug_field="slug",
         queryset=Business.objects.all(),
@@ -372,7 +376,7 @@ class EventSerializer(serializers.ModelSerializer):
         )
 
 
-class BackofficeEventSerializer(serializers.ModelSerializer):
+class BackofficeEventSerializer(ManagementValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = (
@@ -403,7 +407,7 @@ class BackofficeUsefulNumberSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "phone", "description", "category", "order", "is_active")
 
 
-class AdvertiserSerializer(serializers.ModelSerializer):
+class AdvertiserSerializer(ManagementValidationMixin, serializers.ModelSerializer):
     business_names = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -419,7 +423,7 @@ class AdvertiserSerializer(serializers.ModelSerializer):
         return [business.name for business in obj.businesses.all()]
 
 
-class AdvertisingPlanSerializer(serializers.ModelSerializer):
+class AdvertisingPlanSerializer(ManagementValidationMixin, serializers.ModelSerializer):
     class Meta:
         model = AdvertisingPlan
         fields = (
@@ -429,7 +433,7 @@ class AdvertisingPlanSerializer(serializers.ModelSerializer):
         read_only_fields = ("created_at", "updated_at")
 
 
-class AdvertisingSubscriptionSerializer(serializers.ModelSerializer):
+class AdvertisingSubscriptionSerializer(ManagementValidationMixin, serializers.ModelSerializer):
     advertiser_name = serializers.CharField(source="advertiser.name", read_only=True)
     business_name = serializers.CharField(source="business.name", read_only=True)
     plan_name = serializers.CharField(source="plan.name", read_only=True)
@@ -451,7 +455,7 @@ class AdvertisementMediaSerializer(serializers.ModelSerializer):
         read_only_fields = ("id",)
 
 
-class AdvertisementSerializer(serializers.ModelSerializer):
+class AdvertisementSerializer(ManagementValidationMixin, serializers.ModelSerializer):
     business_name = serializers.CharField(source="business.name", read_only=True)
     tags = serializers.ListField(
         child=serializers.CharField(max_length=80), required=False, write_only=True
@@ -470,6 +474,7 @@ class AdvertisementSerializer(serializers.ModelSerializer):
         read_only_fields = ("created_at", "updated_at")
 
     def validate(self, attrs):
+        attrs = super().validate(attrs)
         starts_at = attrs.get("starts_at", getattr(self.instance, "starts_at", None))
         ends_at = attrs.get("ends_at", getattr(self.instance, "ends_at", None))
         if starts_at and ends_at and ends_at < starts_at:
@@ -544,7 +549,7 @@ class AdvertisementSerializer(serializers.ModelSerializer):
                 BusinessImage.objects.create(business=business, image=value, order=index)
 
 
-class InvoiceSerializer(serializers.ModelSerializer):
+class InvoiceSerializer(ManagementValidationMixin, serializers.ModelSerializer):
     advertiser_name = serializers.CharField(
         source="subscription.advertiser.name", read_only=True
     )

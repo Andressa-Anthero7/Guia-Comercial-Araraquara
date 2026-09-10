@@ -2,7 +2,7 @@ import { Business, Coupon, Event, Review, UsefulNumber } from "./types";
 
 const BACKEND_ORIGIN = "https://webapp415078.ip-45-79-2-160.cloudezapp.io";
 const isLocalDevelopmentHost =
-  window.location.hostname === "localhost" || window.location.hostname.endsWith(".localhost");
+  ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname) || window.location.hostname.endsWith(".localhost");
 const API_ORIGIN =
   isLocalDevelopmentHost || window.location.origin === BACKEND_ORIGIN ? "" : BACKEND_ORIGIN;
 
@@ -52,6 +52,7 @@ interface ApiReview {
 }
 
 export interface BackofficeSession {
+  is_superuser?: boolean;
   is_authenticated: boolean;
   is_backoffice: boolean;
   is_advertiser?: boolean;
@@ -208,7 +209,7 @@ function csrfToken() {
   return cookie ? decodeURIComponent(cookie.split("=")[1]) : "";
 }
 
-async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
+export async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
   const method = (options.method ?? "GET").toUpperCase();
   const headers = new Headers(options.headers);
   if (typeof options.body === "string" && !headers.has("Content-Type")) {

@@ -1,6 +1,6 @@
 import { Business } from "../types";
 import { Star, MapPin, MessageSquare, ArrowUpRight, BadgeCheck } from "lucide-react";
-import { CATEGORIES } from "../data";
+import { useCategories } from "../categories";
 
 interface BusinessCardProps {
   key?: string;
@@ -9,6 +9,7 @@ interface BusinessCardProps {
 }
 
 export function BusinessCard({ business, onOpenDetails }: BusinessCardProps) {
+  const CATEGORIES = useCategories();
   const category = CATEGORIES.find((item) => item.slug === business.category);
   const categoryName = category ? category.name : business.category;
   const coverImage = business.images?.[0] || business.image;

@@ -1,7 +1,7 @@
 import { useState, FormEvent } from "react";
 import { Business, Review, Coupon } from "../types";
 import { X, MapPin, Phone, Clock, MessageSquare, Instagram, Star, Calendar, User, ThumbsUp, Send, Gift } from "lucide-react";
-import { CATEGORIES } from "../data";
+import { useCategories } from "../categories";
 
 interface BusinessModalProps {
   business: Business;
@@ -12,6 +12,7 @@ interface BusinessModalProps {
 }
 
 export function BusinessModal({ business, reviews, coupons, onClose, onSubmitReview }: BusinessModalProps) {
+  const CATEGORIES = useCategories();
   const [authorName, setAuthorName] = useState("");
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");

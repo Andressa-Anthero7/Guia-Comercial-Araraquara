@@ -1,0 +1,37 @@
+{
+  "verifiedAt": "2026-09-10T00:44:00.775Z",
+  "checks": [
+    {
+      "company": "M Espetinhos",
+      "url": "https://m-espetinhos.guiacomararaquara.com.br/",
+      "status": 200,
+      "httpsVerified": true
+    },
+    {
+      "company": "Alcântara Barbearia",
+      "url": "https://barbearia-alcantara.guiacomararaquara.com.br/",
+      "status": 200,
+      "httpsVerified": true
+    },
+    {
+      "portal": "https://guiacomararaquara.com.br/",
+      "businessCount": 7,
+      "target": {
+        "id": 2,
+        "name": "M Espetinhos",
+        "plan_type": "paid",
+        "public_subdomain": "m-espetinhos",
+        "status": "active"
+      }
+    },
+    {
+      "certificate": {
+        "authorized": true,
+        "subjectaltname": "DNS:*.guiacomararaquara.com.br, DNS:guiacomararaquara.com.br",
+        "serialNumber": "05E9D91DE49234991E704B62B9D63E68F55E",
+        "validTo": "Dec  8 21:53:08 2026 GMT"
+      }
+    }
+  ],
+  "browserErrors": []
+}

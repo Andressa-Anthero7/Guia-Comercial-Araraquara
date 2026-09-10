@@ -1,5 +1,5 @@
 import { Category } from "../types";
-import { CATEGORIES } from "../data";
+import { useCategories } from "../categories";
 import { CategoryIcon } from "./CategoryIcon";
 import { Grid } from "lucide-react";
 
@@ -9,6 +9,7 @@ interface CategoryListProps {
 }
 
 export function CategoryList({ selectedCategory, setSelectedCategory }: CategoryListProps) {
+  const CATEGORIES = useCategories();
   return (
     <section className="border-b border-stone-200 bg-stone-50/80">
       <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">

@@ -1,0 +1,32 @@
+{
+  "version": "2.0.0",
+  "deployment": "applied to API 415078 and public site 415008; verified in production",
+  "production_verified_at": "2026-09-10T00:44:00.775Z",
+  "release_sha256": "951f49cc30c0e2758aeb4053e709400bacff1802e8367c1603b9be699c460fd9",
+  "backend_tests": 36,
+  "browser_scenarios_verified": 18,
+  "installer_tests": 4,
+  "django_check": "passed",
+  "model_migrations": "none required",
+  "typescript": "passed",
+  "production_build": "passed; Vite reports a large JavaScript chunk",
+  "live_local_browser": "passed account, advertiser, plan, subscription, invoice/payment, coupon, event, useful number, primary advertisement, review, category and paid business page flows",
+  "production_business_activated": {
+    "id": 2,
+    "name": "M Espetinhos",
+    "plan_type": "paid",
+    "public_subdomain": "m-espetinhos",
+    "url": "https://m-espetinhos.guiacomararaquara.com.br/",
+    "anonymous_browser": "passed; company page, HTTP to HTTPS, valid wildcard certificate"
+  },
+  "production_checks": {
+    "administrative_resources": "13 resources returned HTTP 200 with authorized admin authentication",
+    "unauthenticated_resources": "protected resources returned HTTP 403",
+    "public_bundles": "API backoffice and public site serve version 2.0.0",
+    "barber_page": "passed anonymous browser and HTTPS verification",
+    "wildcard_certificate": "same serial and expiry as before deployment",
+    "data_scope": "20 core tables compared with the pre-deployment snapshot; only business id 2 changed; all other business records, images, tags and financial records preserved",
+    "services": "reloaded only the API application uWSGI master; no global Nginx reload"
+  },
+  "remaining": []
+}

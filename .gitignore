@@ -2,6 +2,11 @@ node_modules/
 build/
 dist/
 coverage/
+frontend/test-results/
+frontend/playwright-report/
+# Local release packages, screenshots and one-off diagnostics.
+output/backoffice-v2/
+output/wildcard-diagnostics/
 .DS_Store
 *.log
 .env*

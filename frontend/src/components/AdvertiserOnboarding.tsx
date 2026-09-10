@@ -4,7 +4,8 @@ import {
   Advertiser, Advertisement, AdvertisingPlan, loadFinanceData, saveAdvertisement,
   saveAdvertiser, saveAdvertisingSubscription, saveBackofficeBusiness
 } from "../api";
-import { CATEGORIES, NEIGHBORHOODS } from "../data";
+import { NEIGHBORHOODS } from "../data";
+import { useCategories } from "../categories";
 import { Business } from "../types";
 import { optimizeImageFile, parseTags } from "../utils/content";
 
@@ -20,6 +21,7 @@ const now = () => new Date().toISOString().slice(0, 10);
 const inputClass = "h-10 rounded-lg border border-stone-200 bg-white px-3 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100";
 
 export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId = 0, existingBusiness = null, existingAdvertisement = null }: Props) {
+  const CATEGORIES = useCategories();
   const [step, setStep] = useState(
     existingBusiness && initialAdvertiserId ? 3 : initialAdvertiserId ? 2 : 1
   );
@@ -62,6 +64,11 @@ export function AdvertiserOnboarding({ onCancel, onComplete, initialAdvertiserId
   });
   const [marketing, setMarketing] = useState({ subdomain: existingBusiness?.publicSubdomain ?? "", metaPixelId: existingBusiness?.metaPixelId ?? "", googleAnalyticsId: existingBusiness?.googleAnalyticsId ?? "", googleAdsId: existingBusiness?.googleAdsId ?? "" });
   const selectedPlan = plans.find((plan) => plan.id === commercial.planId);
+  useEffect(() => {
+    if (!existingBusiness && !CATEGORIES.some(item => item.slug === establishment.category)) {
+      setEstablishment(previous => ({ ...previous, category: CATEGORIES[0]?.slug || "" }));
+    }
+  }, [CATEGORIES, existingBusiness, establishment.category]);
   const isPaidPlan = existingBusiness?.planType === "paid" || selectedPlan?.plan_type === "paid";
   const allowsCustomPage = isPaidPlan && (selectedPlan?.includes_custom_page ?? true);
   const maxImages = isPaidPlan ? Math.min(selectedPlan?.max_images ?? 5, 5) : 1;
