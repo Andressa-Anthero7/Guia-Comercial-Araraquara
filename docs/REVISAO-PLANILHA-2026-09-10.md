@@ -1,5 +1,7 @@
 # Revisão da planilha de execução — 10/09/2026
 
+> Revisão inicial preservada abaixo. O [fechamento do dia](FECHAMENTO-2026-09-10.md) atualizou a mesma planilha após as entregas: **34 itens, 12 concluídos e 22 abertos**. A cópia relida está em `records/2026-09-10-planilha-fechamento.json`.
+
 A pedido do usuário, a planilha existente foi revisada e atualizada em seu próprio arquivo.
 
 - Planilha: [Plano de Execucao - Guia Comercial Araraquara](https://docs.google.com/spreadsheets/d/1InSVtuHH8RaZj3IZ8l0mQwY1moeqS3xgnOzQTgAFKeo/edit).
@@ -58,4 +60,3 @@ A gravação foi relida pela API de células: todos os valores, validações e f
 As prioridades técnicas sugeridas na revisão são os itens 21 (datas/pausa de anúncios), 23 (resumo financeiro) e 32 (commit/push e CI). A revisão da planilha não executou essas pendências.
 
 O certificado (item 28) tem vencimento **registrado**, sem nova consulta, em 08/12/2026 às 21:53:08 UTC; a renovação deve ser preparada com antecedência.
-

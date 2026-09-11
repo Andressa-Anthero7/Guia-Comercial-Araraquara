@@ -1,12 +1,14 @@
 # Ponto de retomada — Guia Comercial Araraquara
 
+**Pausa ao encerrar 10/09/2026:** usuário pediu salvar e continuar amanhã. [Fechamento do dia](FECHAMENTO-2026-09-10.md) registra a versão publicada, CI aprovado, checkpoint `a8cc936` enviado ao GitHub e planilha atualizada: 34 itens, 12 concluídos e 22 abertos. Aguardar o retorno do usuário. O código em andamento permanece localmente e está salvo na branch `checkpoint/2026-09-10-backlog`; não descartar alterações.
+
 **Estado atual em 10/09/2026 às 22h29 (America/Sao_Paulo): versão 2.2.0 publicada e testada.** A área do anunciante possui seis URLs próprias, formulários detalhados, busca e filtros, prévias de anúncios/cupons, detalhes financeiros e proteção de alterações não salvas. Login em `https://guiacomararaquara.com.br/anunciante/login`; painel em `/area-do-anunciante`. As seis páginas foram conferidas com a SOL no desktop e no celular. Consulte [Portal 2.2.0](../deployment/PORTAL-2.2.0.md).
 
 - A versão 2.0.4 diminuiu a capa das páginas dedicadas para 256 px no desktop e 224 px no celular; a 2.0.5 trouxe o acesso e a saída para o domínio do Guia e autorizou a origem pública exata na configuração CSRF da API.
 - A senha de `sol.automotivo` foi redefinida conforme pedido do usuário e entregue na conversa. Não registrar senhas neste arquivo. A conta segue comum, anunciante 9 e empresa 8. Login, seis abas, recarregamento e saída foram testados em produção; as sessões de teste foram encerradas.
 - O wildcard foi restaurado pelo usuário via terminal root e o HTTPS foi conferido no navegador. Persistência na Cloudez, renovação automática e identificação da alteração das 15h43 continuam pendentes. Evidências em `deployment/records/2026-09-10/subdomain-tls-regression.md` e arquivos relacionados, ainda fora dos commits das entregas de interface.
 - A API teve `DEBUG=True` corrigido e recebeu backup diário do SQLite com restauração de teste. PostgreSQL ainda depende de criação pelo usuário. Pagamentos ficam em espera; armazenamento será no PostgreSQL, conforme instrução do usuário.
-- Há código do backlog salvo e ainda não publicado nem commitado: agendamento, métricas, fotos do anunciante, benefícios, recorrência, marketing, recuperação de senha e melhorias operacionais. Preservar esse trabalho; as entregas 2.0.4–2.2.0 foram montadas a partir da versão publicada, com alterações isoladas. A planilha precisa receber os resultados da execução posterior à revisão inicial.
+- Há código do backlog salvo e ainda não publicado: agendamento, métricas, fotos do anunciante, benefícios, recorrência, marketing, recuperação de senha e melhorias operacionais. Foi commitado e enviado na branch `checkpoint/2026-09-10-backlog`, commit `a8cc936`. Preservar esse trabalho; as entregas 2.0.4–2.2.0 foram montadas a partir da versão publicada, com alterações isoladas. A planilha recebeu os resultados do dia e foi relida no fechamento.
 
 **Os registros abaixo são históricos**, referentes à pausa da manhã e à revisão inicial da planilha. Não representam a versão atualmente publicada.
 
