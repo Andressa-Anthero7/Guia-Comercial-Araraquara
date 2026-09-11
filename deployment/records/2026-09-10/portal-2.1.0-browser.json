@@ -1,0 +1,80 @@
+{
+  "version": "2.1.0",
+  "mode": "production",
+  "cookieScope": [
+    {
+      "name": "csrftoken",
+      "domain": "guiacomararaquara.com.br",
+      "secure": true,
+      "httpOnly": false
+    },
+    {
+      "name": "sessionid",
+      "domain": "guiacomararaquara.com.br",
+      "secure": true,
+      "httpOnly": true
+    }
+  ],
+  "legacy_redirects_to_guide": true,
+  "public_domain_preserved": true,
+  "expired_session_returns_to_login": true,
+  "second_login_succeeded": true,
+  "username": "sol.automotivo",
+  "user_id": 4,
+  "advertiser_id": 9,
+  "business_ids": [
+    8
+  ],
+  "login_url": "https://guiacomararaquara.com.br/anunciante/login",
+  "area_url": "https://guiacomararaquara.com.br/area-do-anunciante",
+  "verified_at": "2026-09-11T00:43:30.374Z",
+  "login": 200,
+  "portal": 200,
+  "session_persists_after_reload": true,
+  "administrative_access": 403,
+  "counts": {
+    "businesses": 1,
+    "advertisements": 1,
+    "coupons": 0,
+    "subscriptions": 0,
+    "invoices": 0
+  },
+  "public_business_link_verified": "https://guiacomararaquara.com.br/?empresa=sol-centro-tecnico-automotivo",
+  "mobile_widths_verified": [
+    390,
+    320
+  ],
+  "tabs": [
+    {
+      "tab": "Visão geral",
+      "displayed": true
+    },
+    {
+      "tab": "Cadastro",
+      "displayed": true
+    },
+    {
+      "tab": "Estabelecimentos",
+      "displayed": true
+    },
+    {
+      "tab": "Anúncios",
+      "displayed": true
+    },
+    {
+      "tab": "Cupons",
+      "displayed": true
+    },
+    {
+      "tab": "Financeiro",
+      "displayed": true,
+      "emptyAsRegistered": true
+    }
+  ],
+  "browser_errors": [],
+  "business_or_financial_data_modified": false,
+  "anonymous_area_redirects_to_login": true,
+  "logout": 200,
+  "untrusted_origin_rejected": 403,
+  "session_closed": true
+}

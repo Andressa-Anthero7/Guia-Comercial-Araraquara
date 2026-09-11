@@ -385,7 +385,7 @@ test("autentica o anunciante e exibe sua area restrita", async ({ page }) => {
   await page.locator('input[type="password"]').fill("senha-de-teste");
   await page.getByRole("button", { name: "Entrar" }).click();
 
-  await expect(page.getByRole("heading", { name: "Area do Anunciante" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Área do Anunciante" })).toBeVisible();
   await expect(page).toHaveURL(/\/area-do-anunciante$/);
   await expect(page.getByText("Cafe Central Ltda", { exact: true })).toBeVisible();
   await expect(page.getByText(/Profissional/)).toBeVisible();
@@ -412,7 +412,7 @@ test("areas restritas permanecem no dominio do guia com API no mesmo dominio", a
   await page.getByLabel("Usuario", { exact: true }).fill("anunciante");
   await page.getByLabel("Senha", { exact: true }).fill("senha-de-teste");
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Area do Anunciante", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Área do Anunciante", exact: true })).toBeVisible();
   await expect(page).toHaveURL(`${authOrigin}/area-do-anunciante`);
   await page.getByRole("button", { name: "Sair", exact: true }).click();
   await expect(page).toHaveURL(`${authOrigin}/anunciante/login`);
@@ -480,6 +480,151 @@ test("sessao existente encaminha login e endereco antigo para a area do anuncian
   for (const path of ["/anunciante/login", "/anunciante/", "/area-do-anunciante/"]) {
     await page.goto(path);
     await expect(page).toHaveURL(/\/area-do-anunciante$/);
-    await expect(page.getByRole("heading", { name: "Area do Anunciante", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Área do Anunciante", exact: true })).toBeVisible();
   }
+});
+
+async function enterAdvertiser(page: Page) {
+  await page.goto("/anunciante/login");
+  await page.getByLabel("Usuario", { exact: true }).fill("anunciante");
+  await page.getByLabel("Senha", { exact: true }).fill("senha-de-teste");
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Área do Anunciante", exact: true })).toBeVisible();
+}
+
+test("painel profissional apresenta seis seções responsivas e link público da empresa", async ({ page }, testInfo) => {
+  await enterAdvertiser(page);
+  await expect(page.getByRole("link", { name: /Ver página pública/ })).toHaveAttribute("href", "https://cafe-central.guiacomararaquara.com.br/");
+  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100");
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 950 });
+    for (const tab of ["Visão geral", "Estabelecimentos", "Anúncios", "Cupons", "Financeiro", "Cadastro"]) {
+      const button = page.getByRole("navigation", { name: "Navegação do anunciante" }).getByRole("button", { name: tab, exact: true });
+      await button.click();
+      await expect(button).toHaveAttribute("aria-current", "page");
+      await expect(page.locator("#advertiser-content h2").first()).toHaveText(tab);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${tab} em ${width}px`).toBe(true);
+      if (tab === "Visão geral" || tab === "Financeiro") await page.screenshot({ path: testInfo.outputPath(`workspace-${width}-${tab === "Financeiro" ? "finance" : "overview"}.png`), fullPage: true });
+    }
+  }
+});
+
+test("cadastro preserva rascunho em erro e protege saída, troca de aba e atualização", async ({ page }) => {
+  await enterAdvertiser(page);
+  await page.getByRole("button", { name: "Cadastro", exact: true }).click();
+  const input = page.getByLabel("Responsável", { exact: true });
+  await input.fill("Novo responsável");
+  page.once("dialog", dialog => dialog.dismiss());
+  await page.getByRole("button", { name: "Financeiro", exact: true }).click();
+  await expect(input).toHaveValue("Novo responsável");
+  page.once("dialog", dialog => dialog.dismiss());
+  await page.getByRole("button", { name: "Atualizar", exact: true }).click();
+  await expect(input).toHaveValue("Novo responsável");
+  page.once("dialog", dialog => dialog.dismiss());
+  await page.getByRole("button", { name: "Sair", exact: true }).click();
+  await expect(page).toHaveURL(/\/area-do-anunciante$/);
+  let resolve!: () => void;
+  const pending = new Promise<void>(release => { resolve = release; });
+  let writes = 0;
+  await page.route("**/api/advertiser/profile/", async route => {
+    writes++;
+    expect(route.request().postDataJSON().contact_name).toBe("Novo responsável");
+    await pending;
+    await route.fulfill({ status: 503, json: { detail: "Serviço temporariamente indisponível." } });
+  });
+  await page.getByRole("button", { name: "Salvar dados", exact: true }).click();
+  await expect(input).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Salvar dados", exact: true })).toBeDisabled();
+  resolve();
+  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(input).toHaveValue("Novo responsável");
+  expect(writes).toBe(1);
+  await page.route("**/api/advertiser/profile/", route => route.fulfill({ json: { ...advertiserPortal.advertiser, contact_name: "Novo responsável" } }));
+  await page.route("**/api/advertiser/portal/", route => route.fulfill({ json: { ...advertiserPortal, advertiser: { ...advertiserPortal.advertiser, contact_name: "Novo responsável" } } }));
+  await page.getByRole("button", { name: "Salvar dados", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("Cadastro atualizado.");
+  await expect(input).toHaveValue("Novo responsável");
+  await page.getByRole("button", { name: "Financeiro", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Histórico financeiro" })).toBeVisible();
+});
+
+test("edição de estabelecimento envia os dados corretos e encerra o formulário após salvar", async ({ page }) => {
+  await enterAdvertiser(page);
+  await page.getByRole("button", { name: "Estabelecimentos", exact: true }).click();
+  await page.getByRole("button", { name: "Editar dados", exact: true }).click();
+  await page.getByLabel("Horário de atendimento", { exact: true }).fill("Segunda a sexta, das 9h às 18h");
+  await page.route("**/api/advertiser/businesses/cafe-central/", async route => {
+    expect(route.request().method()).toBe("PATCH");
+    expect(route.request().postDataJSON()).toMatchObject({ name: "Cafe Central", opening_hours: "Segunda a sexta, das 9h às 18h", phone_whatsapp: "5516999999999" });
+    await route.fulfill({ json: { ...businesses[0], opening_hours: "Segunda a sexta, das 9h às 18h" } });
+  });
+  await page.getByRole("button", { name: "Salvar", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("Dados do estabelecimento atualizados.");
+  await expect(page.getByLabel("Horário de atendimento", { exact: true })).toHaveCount(0);
+});
+
+test("anúncio explica revisão e cupom transmite oferta e validade sem perder conteúdo", async ({ page }) => {
+  await enterAdvertiser(page);
+  await page.getByRole("button", { name: "Anúncios", exact: true }).click();
+  await page.getByRole("button", { name: "Editar anúncio", exact: true }).click();
+  await expect(page.getByText(/Ao enviar, o anúncio ficará em revisão/)).toBeVisible();
+  await page.getByLabel("Título *", { exact: true }).fill("Seu café da manhã");
+  await page.route("**/api/advertiser/advertisements/1/", route => {
+    expect(route.request().postDataJSON().title).toBe("Seu café da manhã");
+    return route.fulfill({ json: { ...advertiserPortal.advertisements[0], title: "Seu café da manhã", status: "review" } });
+  });
+  await page.getByRole("button", { name: "Enviar para revisão", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("Alterações enviadas para revisão.");
+  await page.getByRole("button", { name: "Cupons", exact: true }).click();
+  await page.getByLabel("Título", { exact: true }).fill("Desconto no café");
+  await page.getByLabel("Código", { exact: true }).fill("CAFE10");
+  await page.getByLabel("Descrição *", { exact: true }).fill("10% no café. Válido uma vez por cliente.");
+  await page.getByLabel("Validade", { exact: true }).fill("2026-12-31");
+  await page.route("**/api/advertiser/coupons/", route => {
+    expect(route.request().postDataJSON()).toMatchObject({ business: "cafe-central", title: "Desconto no café", discount_code: "CAFE10", starts_at: null, expires_at: "2026-12-31", is_active: true });
+    return route.fulfill({ json: { id: 7 } });
+  });
+  await page.getByRole("button", { name: "Salvar cupom", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("Cupom salvo.");
+  await expect(page.getByLabel("Título", { exact: true })).toHaveValue("");
+});
+
+test("conta sem estabelecimentos tem orientação e impede criação de cupom sem vínculo", async ({ page }) => {
+  await page.route("**/api/advertiser/portal/", route => route.fulfill({ json: { ...advertiserPortal, businesses: [], advertisements: [], subscriptions: [] } }));
+  await enterAdvertiser(page);
+  await expect(page.getByRole("heading", { name: "Seu estabelecimento começa aqui" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Ver página pública/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "Cupons", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Salvar cupom", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Financeiro", exact: true }).click();
+  await expect(page.getByText("Nenhuma cobrança cadastrada.", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Os pagamentos on-line ainda não estão disponíveis/)).toBeVisible();
+});
+
+test("financeiro separa valores abertos e vencidos e traduz os meios de pagamento", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-09-10T21:00:00-03:00"));
+  const invoice = { id: 1, subscription: 1, advertiser_name: "Cafe Central Ltda", business_name: "Cafe Central", description: "Mensalidade de setembro", reference_month: "2026-09-01", due_date: "2026-09-05", amount: "100.00", total: "100.00", discount: "0", late_fee: "0", status: "open", paid_at: null, payment_method: "", external_reference: "", notes: "" };
+  await page.route("**/api/advertiser/portal/", route => route.fulfill({ json: { ...advertiserPortal, invoices: [invoice, { ...invoice, id: 2, description: "Pagamento registrado", status: "paid", total: "90.00", payment_method: "card" }, { ...invoice, id: 3, description: "Próxima mensalidade", due_date: "2026-10-05", total: "75.00" }, { ...invoice, id: 4, description: "Cobrança cancelada", status: "cancelled", total: "200.00" }] } }));
+  await enterAdvertiser(page);
+  await page.getByRole("button", { name: "Financeiro", exact: true }).click();
+  await expect(page.locator(".workspace-finance-summary")).toContainText("175,00");
+  await expect(page.locator(".workspace-finance-summary")).toContainText("100,00");
+  const table = page.getByRole("region", { name: "Histórico financeiro" });
+  await expect(table.getByRole("row").filter({ hasText: "Mensalidade de setembro" })).toContainText("Vencido");
+  await expect(table.getByRole("row").filter({ hasText: "Pagamento registrado" })).toContainText("Cartão");
+  await expect(table.getByRole("row").filter({ hasText: "Próxima mensalidade" })).toContainText("Em aberto");
+  await page.setViewportSize({ width: 320, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("cupons distinguem oferta agendada, expirada e inativa", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-09-10T21:00:00-03:00"));
+  const coupon = { business: "cafe-central", business_name: "Cafe Central", discount_code: "CAFE10", description: "Uma oferta", is_active: true, is_valid: false, starts_at: "2026-09-01", expires_at: "2026-12-31" };
+  await page.route("**/api/advertiser/portal/", route => route.fulfill({ json: { ...advertiserPortal, coupons: [{ ...coupon, id: 1, title: "Oferta futura", starts_at: "2026-10-01" }, { ...coupon, id: 2, title: "Oferta encerrada", expires_at: "2026-09-09" }, { ...coupon, id: 3, title: "Oferta pausada", is_active: false }] } }));
+  await enterAdvertiser(page);
+  await page.getByRole("button", { name: "Cupons", exact: true }).click();
+  const table = page.getByRole("region", { name: "Lista de cupons" });
+  await expect(table.getByRole("row").filter({ hasText: "Oferta futura" })).toContainText("Agendado");
+  await expect(table.getByRole("row").filter({ hasText: "Oferta encerrada" })).toContainText("Expirado");
+  await expect(table.getByRole("row").filter({ hasText: "Oferta pausada" })).toContainText("Inativo");
 });
