@@ -1,0 +1,81 @@
+{
+  "version": "2.2.0",
+  "mode": "production",
+  "verified_at": "2026-09-11T01:29:36.150Z",
+  "username": "sol.automotivo",
+  "advertiser_id": 9,
+  "business_ids": [
+    8
+  ],
+  "login": 200,
+  "portal": 200,
+  "logout": 200,
+  "session_closed": true,
+  "cookieScope": [
+    {
+      "name": "csrftoken",
+      "domain": "guiacomararaquara.com.br",
+      "secure": true,
+      "httpOnly": false
+    },
+    {
+      "name": "sessionid",
+      "domain": "guiacomararaquara.com.br",
+      "secure": true,
+      "httpOnly": true
+    }
+  ],
+  "administrative_access": 403,
+  "untrusted_origin_rejected": 403,
+  "login_preserves_requested_section": true,
+  "expired_session_restores_section_after_login": true,
+  "history_back_forward": true,
+  "unsaved_changes_preserved": true,
+  "public_business_link_verified": "https://guiacomararaquara.com.br/?empresa=sol-centro-tecnico-automotivo",
+  "desktop_1366x768_actions_visible_without_scrolling": true,
+  "mobile_widths_verified": [
+    390,
+    320
+  ],
+  "tabs": [
+    {
+      "tab": "Visão geral",
+      "url": "https://guiacomararaquara.com.br/area-do-anunciante",
+      "http_status": 200,
+      "refresh_keeps_section": true
+    },
+    {
+      "tab": "Estabelecimentos",
+      "url": "https://guiacomararaquara.com.br/area-do-anunciante/estabelecimentos",
+      "http_status": 200,
+      "refresh_keeps_section": true
+    },
+    {
+      "tab": "Anúncios",
+      "url": "https://guiacomararaquara.com.br/area-do-anunciante/anuncios",
+      "http_status": 200,
+      "refresh_keeps_section": true
+    },
+    {
+      "tab": "Cupons",
+      "url": "https://guiacomararaquara.com.br/area-do-anunciante/cupons",
+      "http_status": 200,
+      "refresh_keeps_section": true
+    },
+    {
+      "tab": "Financeiro",
+      "url": "https://guiacomararaquara.com.br/area-do-anunciante/financeiro",
+      "http_status": 200,
+      "refresh_keeps_section": true
+    },
+    {
+      "tab": "Cadastro",
+      "url": "https://guiacomararaquara.com.br/area-do-anunciante/cadastro",
+      "http_status": 200,
+      "refresh_keeps_section": true
+    }
+  ],
+  "browser_errors": [],
+  "business_or_financial_data_modified": false,
+  "unexpected_writes": []
+}

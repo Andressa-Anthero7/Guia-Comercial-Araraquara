@@ -1,3 +1,4 @@
+import { advertiserAuthTarget, advertiserRouteEvent } from "./advertiserRoutes";
 import { useState, useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Header } from "./components/Header";
@@ -91,7 +92,8 @@ export default function App() {
   useEffect(() => {
     const handleRouteChange = () => setCurrentPath(window.location.pathname);
     window.addEventListener("popstate", handleRouteChange);
-    return () => window.removeEventListener("popstate", handleRouteChange);
+    window.addEventListener(advertiserRouteEvent, handleRouteChange);
+    return () => { window.removeEventListener("popstate", handleRouteChange); window.removeEventListener(advertiserRouteEvent, handleRouteChange); };
   }, []);
 
   useEffect(() => {
@@ -115,10 +117,11 @@ export default function App() {
 
   useEffect(() => {
     if (authenticationUrl || !isAdvertiserArea || !isSessionChecked) return;
-    const target = backofficeSession.is_advertiser ? "/area-do-anunciante" : "/anunciante/login";
-    if (currentPath === target) return;
-    window.history.replaceState({}, "", `${target}${window.location.search}${window.location.hash}`);
-    setCurrentPath(target);
+    const target = advertiserAuthTarget(Boolean(backofficeSession.is_advertiser), currentPath, window.location.search, window.location.hash);
+    if (window.location.pathname + window.location.search + window.location.hash === target) return;
+    window.history.replaceState({ ...window.history.state }, "", target);
+    setCurrentPath(window.location.pathname);
+    window.dispatchEvent(new window.Event(advertiserRouteEvent));
   }, [authenticationUrl, isAdvertiserArea, isSessionChecked, backofficeSession.is_advertiser, currentPath]);
 
   useEffect(() => {
@@ -296,6 +299,8 @@ export default function App() {
       setAdvertiserLoginNotice("Sua sessão expirou. Entre novamente para continuar.");
     }} onLogout={async () => {
       await logoutBackoffice();
+      window.history.replaceState({}, "", "/anunciante/login");
+      setCurrentPath("/anunciante/login");
       setBackofficeSession({ is_authenticated: false, is_backoffice: false, is_advertiser: false, username: "", name: "", email: "" });
       setAdvertiserLoginNotice("");
     }} />;

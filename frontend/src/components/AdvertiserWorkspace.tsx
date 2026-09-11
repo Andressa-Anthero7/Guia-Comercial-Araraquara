@@ -4,7 +4,9 @@ import { AdvertiserCoupon, AdvertiserPortalData } from "../api";
 import { Business } from "../types";
 import "./advertiser-workspace.css";
 
-export type AdvertiserTab = "overview" | "profile" | "businesses" | "ads" | "coupons" | "finance";
+import { advertiserPaths, AdvertiserTab } from "../advertiserRoutes";
+export type { AdvertiserTab } from "../advertiserRoutes";
+import "./advertiser/sections.css";
 const navigation = [
   { id: "overview", label: "Visão geral", icon: LayoutDashboard, description: "Estabelecimentos, anúncios, cupons e financeiro." },
   { id: "businesses", label: "Estabelecimentos", icon: Building2, description: "Mantenha as informações que seus clientes encontram sempre atualizadas." },
@@ -41,11 +43,13 @@ export function PublicBusinessLink({ business }: { business: Business }) {
   return business.status === "active" ? <a className="workspace-text-link" href={businessPageUrl(business)} target="_blank" rel="noopener noreferrer">Ver página pública <ExternalLink size={15} aria-hidden="true" /><span className="sr-only"> de {business.name} (abre em outra aba)</span></a> : null;
 }
 
-export function AdvertiserWorkspace({ data, tab, onTab, onLogout, onRefresh, loading, saving, error, notice, children }: {
-  data: AdvertiserPortalData; tab: AdvertiserTab; onTab: (tab: AdvertiserTab) => void; onLogout: () => void; onRefresh: () => void;
-  loading: boolean; saving: boolean; error: string; notice: string; children: ReactNode;
+export function AdvertiserWorkspace({ data, tab, onTab, onLogout, onRefresh, loading, saving, busyMessage, error, notice, children }: {
+  data: AdvertiserPortalData; tab: AdvertiserTab | null; onTab: (tab: AdvertiserTab) => void; onLogout: () => void; onRefresh: () => void;
+  loading: boolean; saving: boolean; busyMessage?: string; error: string; notice: string; children: ReactNode;
 }) {
-  const current = navigation.find(item => item.id === tab)!;
+  const current = navigation.find(item => item.id === tab) ?? { label: "Página não encontrada", description: "Escolha uma seção no menu para continuar." };
+  useEffect(() => { const previous = document.title; document.title = `${current.label} | Área do Anunciante`; return () => { document.title = previous; }; }, [current.label]);
+  useEffect(() => { if (error || notice) document.querySelector<HTMLElement>(".workspace-feedback")?.scrollIntoView({ block: "nearest" }); }, [error, notice]);
   const heading = useRef<HTMLHeadingElement>(null);
   const previousTab = useRef(tab);
   useEffect(() => {
@@ -56,7 +60,7 @@ export function AdvertiserWorkspace({ data, tab, onTab, onLogout, onRefresh, loa
     <aside className="workspace-sidebar">
       <a href="https://guiacomararaquara.com.br/" className="workspace-brand" aria-label="Guia Comercial Araraquara — página inicial"><span className="workspace-brand-icon"><Store size={24} /></span><span>Guia Comercial<small>ARARAQUARA</small></span></a>
       <div className="workspace-nav-label">SEU ESPAÇO DE GESTÃO</div>
-      <nav aria-label="Navegação do anunciante">{navigation.map(({ id, label, icon: Icon }) => <button key={id} type="button" aria-current={tab === id ? "page" : undefined} onClick={() => onTab(id)} disabled={saving}><Icon size={19} aria-hidden="true" /><span>{label}</span>{tab === id && <ChevronRight className="workspace-nav-arrow" size={16} aria-hidden="true" />}</button>)}</nav>
+      <nav aria-label="Navegação do anunciante">{navigation.map(({ id, label, icon: Icon }) => <a key={id} href={advertiserPaths[id]} aria-current={tab === id ? "page" : undefined} aria-disabled={saving || undefined} onClick={event => { if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); if (!saving) onTab(id); }}><Icon size={19} aria-hidden="true" /><span>{label}</span>{tab === id && <ChevronRight className="workspace-nav-arrow" size={16} aria-hidden="true" />}</a>)}</nav>
       <a className="workspace-back" href="https://guiacomararaquara.com.br/"><ArrowDownLeft size={17} />Visitar o Guia</a>
     </aside>
     <div className="workspace-main">
@@ -65,7 +69,7 @@ export function AdvertiserWorkspace({ data, tab, onTab, onLogout, onRefresh, loa
         <div className="workspace-page-heading"><div><h2 ref={heading} tabIndex={-1}>{current.label}</h2><p>{current.description}</p></div><div className="workspace-heading-actions">{tab === "overview" && <button type="button" className="workspace-primary" onClick={() => onTab("businesses")} disabled={saving}><Building2 size={16} aria-hidden="true" />Gerenciar estabelecimentos</button>}<button type="button" className="workspace-secondary" onClick={onRefresh} disabled={loading || saving}><RefreshCw size={16} className={loading ? "animate-spin" : ""} aria-hidden="true" />Atualizar</button></div></div>
         {error && <div role="alert" className="workspace-feedback error">{error}</div>}
         {notice && !saving && <div role="status" className="workspace-feedback success"><Check size={18} aria-hidden="true" />{notice}</div>}
-        {saving && <p role="status" className="workspace-feedback">Salvando alterações…</p>}
+        {saving && <p role="status" className="workspace-feedback">{busyMessage || "Salvando alterações…"}</p>}
         <div className="workspace-body" aria-busy={loading || saving}>{children}</div>
         <footer className="workspace-footer"><span>Guia Comercial Araraquara</span><span>Conectando pessoas ao comércio local.</span></footer>
       </main>
