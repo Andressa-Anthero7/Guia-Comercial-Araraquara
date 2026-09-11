@@ -1,0 +1,30 @@
+{
+  "archive_sha256": "c2e2b866b547af62242060696a3db1202738b30fc5bde8001a2da46e5e0820f0",
+  "manifest": {
+    "version": "2.1.1",
+    "migrate_core": false,
+    "files": {
+      "public/assets/index-Jmk76WS8.js": "2cb64872d309311075a382a3a40c59081625da65f01df134c76a0fa8040d2b17",
+      "public/assets/index-CpdXIIyo.css": "cf9261e785ddc3c5fb33a23b52b71fb1f4cd72f5143d7f9552e3862f3a8b1872",
+      "public/index.html": "c0e6bc784e5557d076b119b5c9dbc6829a43a05f7ee1c79724f28626d5e0ff2b"
+    }
+  },
+  "public": {
+    "root": "/srv/guia_comercial_araraquara.2d4f02a0.configr.cloud/www",
+    "archive_sha256": "c2e2b866b547af62242060696a3db1202738b30fc5bde8001a2da46e5e0820f0",
+    "stage": "/home/guia_comercial_araraquara/gca-portal-2.1.1-gltwyj0g",
+    "backup": "/srv/guia_comercial_araraquara.2d4f02a0.configr.cloud/gca-public-2.1.1-z6ilelfj",
+    "verified_files": 3,
+    "configuration_preserved": true,
+    "backend_modified": false
+  },
+  "api": {
+    "root": "/srv/gca-backend.2d4f02a0.configr.cloud/www/backoffice_frontend",
+    "archive_sha256": "c2e2b866b547af62242060696a3db1202738b30fc5bde8001a2da46e5e0820f0",
+    "stage": "/home/gca-backend/gca-portal-2.1.1-zb0epide",
+    "backup": "/srv/gca-backend.2d4f02a0.configr.cloud/www/gca-public-2.1.1-zv11fa31",
+    "verified_files": 3,
+    "configuration_preserved": true,
+    "backend_modified": false
+  }
+}
