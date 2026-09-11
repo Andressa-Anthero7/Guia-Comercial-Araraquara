@@ -9,7 +9,7 @@ const API_ORIGIN =
   isLocalDevelopmentHost || [GUIDE_ORIGIN, BACKEND_ORIGIN].includes(window.location.origin) ? "" : BACKEND_ORIGIN;
 
 export function authenticationRedirectUrl(pathname: string) {
-  if (isLocalDevelopmentHost || window.location.origin === GUIDE_ORIGIN || !/^\/(anunciante|backoffice)(?:\/|$)/.test(pathname)) return "";
+  if (isLocalDevelopmentHost || window.location.origin === GUIDE_ORIGIN || !/^\/(anunciante|area-do-anunciante|backoffice)(?:\/|$)/.test(pathname)) return "";
   return `${GUIDE_ORIGIN}${pathname}${window.location.search}${window.location.hash}`;
 }
 

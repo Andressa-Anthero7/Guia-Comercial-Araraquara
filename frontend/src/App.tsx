@@ -58,6 +58,8 @@ export default function App() {
   const subdomainPreview = new URLSearchParams(window.location.search).get("subdomain")?.toLowerCase() ?? "";
   const currentTenantSubdomain = tenantSubdomain(window.location.hostname) || subdomainPreview;
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
+  const isAdvertiserArea = /^\/(anunciante|area-do-anunciante)(?:\/|$)/.test(currentPath);
+  const sessionArea = isAdvertiserArea ? "advertiser" : currentPath.startsWith("/backoffice") ? "backoffice" : "";
   const authenticationUrl = authenticationRedirectUrl(currentPath);
   const [advertiserLoginNotice, setAdvertiserLoginNotice] = useState("");
   const [isBackofficeAuthenticated, setIsBackofficeAuthenticated] = useState(false);
@@ -97,20 +99,30 @@ export default function App() {
       window.location.replace(authenticationUrl);
       return;
     }
-    const isProtectedArea = currentPath.startsWith("/backoffice") || currentPath.startsWith("/anunciante");
-    if (!isProtectedArea) return;
+    if (!sessionArea) return;
+    let active = true;
     setIsSessionChecked(false);
     getSession()
       .then((session) => {
+        if (!active) return;
         setBackofficeSession(session);
         setIsBackofficeAuthenticated(session.is_backoffice === true);
       })
-      .catch(() => setIsBackofficeAuthenticated(false))
-      .finally(() => setIsSessionChecked(true));
-  }, [currentPath, authenticationUrl]);
+      .catch(() => { if (active) setIsBackofficeAuthenticated(false); })
+      .finally(() => { if (active) setIsSessionChecked(true); });
+    return () => { active = false; };
+  }, [sessionArea, authenticationUrl]);
 
   useEffect(() => {
-    if (currentPath.startsWith("/backoffice") || currentPath.startsWith("/anunciante")) return;
+    if (authenticationUrl || !isAdvertiserArea || !isSessionChecked) return;
+    const target = backofficeSession.is_advertiser ? "/area-do-anunciante" : "/anunciante/login";
+    if (currentPath === target) return;
+    window.history.replaceState({}, "", `${target}${window.location.search}${window.location.hash}`);
+    setCurrentPath(target);
+  }, [authenticationUrl, isAdvertiserArea, isSessionChecked, backofficeSession.is_advertiser, currentPath]);
+
+  useEffect(() => {
+    if (sessionArea) return;
     let active = true;
     setIsPortalLoaded(false);
     Promise.all([loadPortalData(), refreshCategories()])
@@ -135,7 +147,7 @@ export default function App() {
         setIsPortalLoaded(true);
       });
     return () => { active = false; };
-  }, [currentPath, portalAttempt]);
+  }, [currentPath, sessionArea, portalAttempt]);
 
   useEffect(() => {
     if (!isBackofficeAuthenticated || !currentPath.startsWith("/backoffice")) return;
@@ -267,7 +279,7 @@ export default function App() {
     return <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6"><p role="status" className="text-sm font-semibold text-slate-600">Abrindo a área de acesso...</p></main>;
   }
 
-  if (currentPath.startsWith("/anunciante")) {
+  if (isAdvertiserArea) {
     if (!isSessionChecked) {
       return <div className="flex min-h-screen items-center justify-center bg-slate-100 text-sm font-semibold text-slate-600">Carregando acesso...</div>;
     }
@@ -285,7 +297,7 @@ export default function App() {
     }} onLogout={async () => {
       await logoutBackoffice();
       setBackofficeSession({ is_authenticated: false, is_backoffice: false, is_advertiser: false, username: "", name: "", email: "" });
-      window.location.href = "https://guiacomararaquara.com.br/";
+      setAdvertiserLoginNotice("");
     }} />;
   }
 

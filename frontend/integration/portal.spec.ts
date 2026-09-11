@@ -82,6 +82,7 @@ test("contato anterior à separação dos campos continua disponível", async ({
 
 test("anunciante mantém sessão real e consegue entrar novamente após perder os cookies", async ({ page }) => {
   await page.goto("/anunciante/");
+  await expect(page).toHaveURL(/\/anunciante\/login$/);
   const signIn = async () => {
     await page.getByLabel("Usuario", { exact: true }).fill("portal-e2e-advertiser");
     await page.getByLabel("Senha", { exact: true }).fill("local-e2e-password");
@@ -91,16 +92,23 @@ test("anunciante mantém sessão real e consegue entrar novamente após perder o
     expect((await loginResponse).status()).toBe(200);
     expect((await portalResponse).status()).toBe(200);
     await expect(page.getByText("Anunciante de integração", { exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/\/area-do-anunciante$/);
   };
   await signIn();
   await page.reload();
   await expect(page.getByText("Anunciante de integração", { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/area-do-anunciante$/);
   await page.getByRole("button", { name: "Estabelecimentos", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Contato legado de teste", exact: true })).toBeVisible();
   expect((await page.request.get("/api/backoffice/businesses/")).status()).toBe(403);
   await page.context().clearCookies();
   await page.getByRole("button", { name: "Atualizar", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Sua sessão expirou");
+  await expect(page).toHaveURL(/\/anunciante\/login$/);
   await expect(page.getByRole("button", { name: "Tentar novamente", exact: true })).toHaveCount(0);
   await signIn();
+  await page.getByRole("button", { name: "Sair", exact: true }).click();
+  await expect(page).toHaveURL(/\/anunciante\/login$/);
+  await expect(page.getByRole("button", { name: "Entrar", exact: true })).toBeVisible();
+  expect((await (await page.request.get("/api/auth/session/")).json()).is_authenticated).toBe(false);
 });

@@ -379,13 +379,14 @@ test("autentica no backoffice e filtra estabelecimentos por status", async ({ pa
 });
 
 test("autentica o anunciante e exibe sua area restrita", async ({ page }) => {
-  await page.goto("/anunciante/");
+  await page.goto("/anunciante/login");
 
   await page.getByLabel("Usuario").fill("anunciante");
   await page.locator('input[type="password"]').fill("senha-de-teste");
   await page.getByRole("button", { name: "Entrar" }).click();
 
   await expect(page.getByRole("heading", { name: "Area do Anunciante" })).toBeVisible();
+  await expect(page).toHaveURL(/\/area-do-anunciante$/);
   await expect(page.getByText("Cafe Central Ltda", { exact: true })).toBeVisible();
   await expect(page.getByText(/Profissional/)).toBeVisible();
 });
@@ -404,7 +405,7 @@ test("areas restritas permanecem no dominio do guia com API no mesmo dominio", a
   const authOrigin = "https://guiacomararaquara.com.br";
   for (const path of ["/anunciante/?origem=guia", "/backoffice/gestao/advertisers"]) {
     await page.goto(`https://guiacomararaquara.com.br${path}`);
-    await expect(page).toHaveURL(`${authOrigin}${path}`);
+    await expect(page).toHaveURL(`${authOrigin}${path.startsWith("/anunciante") ? "/anunciante/login?origem=guia" : path}`);
     await expect(page.getByRole("button", { name: "Entrar", exact: true })).toBeVisible();
   }
   await page.goto(`${authOrigin}/anunciante/`);
@@ -412,7 +413,10 @@ test("areas restritas permanecem no dominio do guia com API no mesmo dominio", a
   await page.getByLabel("Senha", { exact: true }).fill("senha-de-teste");
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Area do Anunciante", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(`${authOrigin}/area-do-anunciante`);
   await page.getByRole("button", { name: "Sair", exact: true }).click();
+  await expect(page).toHaveURL(`${authOrigin}/anunciante/login`);
+  await page.getByRole("button", { name: "Voltar ao guia", exact: true }).click();
   await expect(page).toHaveURL(`${authOrigin}/`);
   await expect(page.getByText("Cafe Central", { exact: true })).toBeVisible();
   expect(authRequests.length).toBeGreaterThan(0);
@@ -432,7 +436,7 @@ test("endereco antigo e subdominios encaminham o login para o dominio do guia", 
   }
   for (const origin of oldOrigins) {
     await page.goto(`${origin}/anunciante/?origem=antigo#cadastro`);
-    await expect(page).toHaveURL(`${guideOrigin}/anunciante/?origem=antigo#cadastro`);
+    await expect(page).toHaveURL(`${guideOrigin}/anunciante/login?origem=antigo#cadastro`);
     await expect(page.getByRole("button", { name: "Entrar", exact: true })).toBeVisible();
   }
 });
@@ -450,6 +454,7 @@ test("sessão perdida no painel volta ao login e permite entrar novamente", asyn
   expired = true;
   await page.getByRole("button", { name: "Atualizar", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Sua sessão expirou");
+  await expect(page).toHaveURL(/\/anunciante\/login$/);
   await expect(page.getByText("Cafe Central Ltda", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Tentar novamente", exact: true })).toHaveCount(0);
   expired = false;
@@ -458,4 +463,23 @@ test("sessão perdida no painel volta ao login e permite entrar novamente", asyn
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(page.getByText("Cafe Central Ltda", { exact: true })).toBeVisible();
   await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(page).toHaveURL(/\/area-do-anunciante$/);
+});
+
+test("sem sessao os acessos direto e antigo levam ao login do anunciante", async ({ page }) => {
+  for (const path of ["/area-do-anunciante", "/area-do-anunciante/", "/anunciante", "/anunciante/"]) {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/anunciante\/login$/);
+    await expect(page.getByRole("button", { name: "Entrar", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Financeiro", exact: true })).toHaveCount(0);
+  }
+});
+
+test("sessao existente encaminha login e endereco antigo para a area do anunciante", async ({ page }) => {
+  await page.route("**/api/auth/session/", route => route.fulfill({ json: { is_authenticated: true, is_backoffice: false, is_advertiser: true, username: "anunciante", name: "Responsavel", email: "" } }));
+  for (const path of ["/anunciante/login", "/anunciante/", "/area-do-anunciante/"]) {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/area-do-anunciante$/);
+    await expect(page.getByRole("heading", { name: "Area do Anunciante", exact: true })).toBeVisible();
+  }
 });

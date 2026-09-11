@@ -19,6 +19,7 @@ def main():
             "NAME": Path(directory) / "portal.sqlite3",
         }}
         settings.ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+        settings.CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:3001"]
         settings.DEBUG = False
         django.setup()
         from django.contrib.auth import get_user_model
