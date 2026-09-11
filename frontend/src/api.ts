@@ -21,6 +21,7 @@ export class AuthenticationError extends Error {
 }
 
 interface ApiBusiness {
+  benefits?: Business["benefits"];
   id: number;
   slug: string;
   name: string;
@@ -189,6 +190,7 @@ export interface AdvertiserCoupon {
 }
 
 export interface AdvertiserPortalData {
+  metrics?: { start: string; end: string; totals: Array<{ business_id: number; business__name: string; event: string; count: number }> };
   advertiser: Advertiser;
   businesses: Business[];
   advertisements: Advertisement[];
@@ -291,6 +293,7 @@ export function mapBusiness(item: ApiBusiness): Business {
   const images = gallery.map((image) => image.image);
   const cover = item.image_url || images[0] || "";
   return {
+    benefits: item.benefits,
     id: String(item.id),
     slug: item.slug,
     name: item.name,

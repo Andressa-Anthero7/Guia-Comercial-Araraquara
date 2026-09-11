@@ -1,7 +1,8 @@
 from django.contrib.auth import authenticate, login, logout
 from datetime import timedelta
 import os
-from django.db.models import Q, Sum
+from django.db.models import F, Q, Sum
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -10,7 +11,10 @@ from rest_framework.decorators import action, api_view
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from .management import ManagedWritesMixin
-from .images import image_response
+from .images import image_response, PublicImageField
+from .publication import public_businesses
+from .metrics import EVENTS, MetricThrottle, advertiser_metrics
+from .benefits import business_benefits, businesses_with_coupons
 
 from .models import (
     Advertiser,
@@ -18,6 +22,7 @@ from .models import (
     AdvertisingSubscription,
     Advertisement,
     Business,
+    BusinessDailyMetric,
     BackofficeNotification,
     Category,
     Coupon,
@@ -149,9 +154,9 @@ def finance_summary(request):
 
     today = timezone.localdate()
     invoices = Invoice.objects.exclude(status=Invoice.Status.CANCELLED)
-    open_invoices = invoices.filter(status=Invoice.Status.OPEN)
-    overdue = open_invoices.filter(due_date__lt=today)
-    due_soon = open_invoices.filter(due_date__gte=today, due_date__lte=today + timedelta(days=7))
+    open_invoices = invoices.filter(status__in=[Invoice.Status.OPEN, Invoice.Status.OVERDUE])
+    overdue = open_invoices.filter(Q(status=Invoice.Status.OVERDUE) | Q(due_date__lt=today))
+    due_soon = invoices.filter(status=Invoice.Status.OPEN, due_date__gte=today, due_date__lte=today + timedelta(days=7))
     paid_this_month = invoices.filter(
         status=Invoice.Status.PAID,
         paid_at__year=today.year,
@@ -210,6 +215,7 @@ def advertiser_portal(request):
         "coupons": BackofficeCouponSerializer(Coupon.objects.filter(business__in=businesses), many=True).data,
         "subscriptions": AdvertisingSubscriptionSerializer(AdvertisingSubscription.objects.filter(advertiser=advertiser), many=True).data,
         "invoices": InvoiceSerializer(Invoice.objects.filter(subscription__advertiser=advertiser), many=True).data,
+        "metrics": advertiser_metrics(businesses),
     })
 
 
@@ -230,6 +236,7 @@ def advertiser_profile(request):
 
 
 @api_view(["PATCH"])
+@transaction.atomic
 def advertiser_business(request, slug):
     advertiser = active_advertiser_for(request)
     if advertiser is None:
@@ -237,6 +244,14 @@ def advertiser_business(request, slug):
     business = advertiser.businesses.filter(slug=slug).first()
     if business is None:
         return Response({"detail": "Estabelecimento nao encontrado."}, status=status.HTTP_404_NOT_FOUND)
+    # Public self-service uploads use the same raster/size checks as registration.
+    image_field = PublicImageField(allow_blank=True)
+    for key in ("logo_image", "image_url"):
+        if key in request.data:
+            image_field.run_validation(request.data[key])
+    if "images" in request.data and isinstance(request.data["images"], list):
+        for value in request.data["images"]:
+            image_field.run_validation(value)
     allowed_fields = {
         "name", "description", "services_products", "category", "street", "number",
         "complement", "neighborhood", "city", "state", "postal_code", "phone", "phone_whatsapp",
@@ -312,7 +327,7 @@ class BusinessViewSet(
 
     def get_queryset(self):
         queryset = (
-            Business.objects.filter(status=Business.Status.ACTIVE)
+            public_businesses()
             .select_related("category")
             .prefetch_related("tags", "images")
         )
@@ -351,10 +366,21 @@ class BusinessViewSet(
         business = self.get_object()
         return image_response(business.image_url)
 
+    @action(detail=True, methods=["post"], url_path="events", authentication_classes=[], throttle_classes=[MetricThrottle])
+    def record_event(self, request, slug=None):
+        business = self.get_object()
+        event = request.data.get("event")
+        if not isinstance(event, str) or event not in EVENTS:
+            return Response({"event": "Evento inválido."}, status=status.HTTP_400_BAD_REQUEST)
+        metric, _ = BusinessDailyMetric.objects.get_or_create(business=business, day=timezone.localdate(), event=event)
+        BusinessDailyMetric.objects.filter(pk=metric.pk).update(count=F("count") + 1)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(detail=True, methods=["get"], url_path=r"images/(?P<image_id>[0-9]+)")
     def gallery_image(self, request, slug=None, image_id=None):
         business = self.get_object()
-        item = get_object_or_404(business.images, pk=image_id)
+        allowed = list(business.images.values_list("pk", flat=True)[:business_benefits(business)["max_images"]])
+        item = get_object_or_404(business.images.filter(pk__in=allowed), pk=image_id)
         return image_response(item.image)
 
 
@@ -380,7 +406,7 @@ class ReviewViewSet(
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        queryset = Review.objects.filter(is_approved=True).select_related("business")
+        queryset = Review.objects.filter(is_approved=True, business__in=public_businesses()).select_related("business")
         business = self.request.query_params.get("business")
         if business:
             queryset = queryset.filter(business__slug=business)
@@ -394,7 +420,7 @@ class CouponViewSet(viewsets.ReadOnlyModelViewSet):
         today = timezone.localdate()
         queryset = Coupon.objects.filter(
             is_active=True,
-            business__status=Business.Status.ACTIVE,
+            business__in=public_businesses().filter(pk__in=businesses_with_coupons()),
         ).filter(
             Q(starts_at__isnull=True) | Q(starts_at__lte=today),
             Q(expires_at__isnull=True) | Q(expires_at__gte=today),

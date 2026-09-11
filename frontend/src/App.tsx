@@ -1,5 +1,5 @@
 import { advertiserAuthTarget, advertiserRouteEvent } from "./advertiserRoutes";
-import { useState, useEffect } from "react";
+import { lazy, useState, useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
@@ -9,15 +9,15 @@ import { BusinessModal } from "./components/BusinessModal";
 import { CouponSection } from "./components/CouponSection";
 import { EventSection } from "./components/EventSection";
 import { UsefulNumbersSection } from "./components/UsefulNumbersSection";
-import { BusinessFormModal } from "./components/BusinessFormModal";
 import { BusinessLandingPage } from "./components/BusinessLandingPage";
 import { Footer } from "./components/Footer";
 import { PortalStatus } from "./components/PortalStatus";
 import { refreshCategories } from "./categories";
-import { Backoffice } from "./management/Management";
-import { BackofficeLogin } from "./components/BackofficeLogin";
-import { AdvertiserLogin } from "./components/AdvertiserLogin";
-import { AdvertiserPortal } from "./components/AdvertiserPortal";
+const Backoffice = lazy(() => import("./management/Management").then(module => ({ default: module.Backoffice })));
+const BackofficeLogin = lazy(() => import("./components/BackofficeLogin").then(module => ({ default: module.BackofficeLogin })));
+const AdvertiserLogin = lazy(() => import("./components/AdvertiserLogin").then(module => ({ default: module.AdvertiserLogin })));
+const AdvertiserPortal = lazy(() => import("./components/AdvertiserPortal").then(module => ({ default: module.AdvertiserPortal })));
+const BusinessFormModal = lazy(() => import("./components/BusinessFormModal").then(module => ({ default: module.BusinessFormModal })));
 
 import { Business, Review, Coupon, Event, UsefulNumber } from "./types";
 import {

@@ -1,0 +1,59 @@
+{
+  "verified_utc": "2026-09-10T23:15:55.504778+00:00",
+  "checks": [
+    {
+      "host": "guiacomararaquara.com.br",
+      "https_status": 200,
+      "tls_verified": true,
+      "serial": "05E9D91DE49234991E704B62B9D63E68F55E",
+      "names": [
+        [
+          "DNS",
+          "*.guiacomararaquara.com.br"
+        ],
+        [
+          "DNS",
+          "guiacomararaquara.com.br"
+        ]
+      ],
+      "expires": "Dec  8 21:53:08 2026 GMT",
+      "http_final_url": "https://guiacomararaquara.com.br/"
+    },
+    {
+      "host": "m-espetinhos.guiacomararaquara.com.br",
+      "https_status": 200,
+      "tls_verified": true,
+      "serial": "05E9D91DE49234991E704B62B9D63E68F55E",
+      "names": [
+        [
+          "DNS",
+          "*.guiacomararaquara.com.br"
+        ],
+        [
+          "DNS",
+          "guiacomararaquara.com.br"
+        ]
+      ],
+      "expires": "Dec  8 21:53:08 2026 GMT",
+      "http_final_url": "https://m-espetinhos.guiacomararaquara.com.br/"
+    },
+    {
+      "host": "barbearia-alcantara.guiacomararaquara.com.br",
+      "https_status": 200,
+      "tls_verified": true,
+      "serial": "05E9D91DE49234991E704B62B9D63E68F55E",
+      "names": [
+        [
+          "DNS",
+          "*.guiacomararaquara.com.br"
+        ],
+        [
+          "DNS",
+          "guiacomararaquara.com.br"
+        ]
+      ],
+      "expires": "Dec  8 21:53:08 2026 GMT",
+      "http_final_url": "https://barbearia-alcantara.guiacomararaquara.com.br/"
+    }
+  ]
+}

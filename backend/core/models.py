@@ -172,6 +172,16 @@ class Business(models.Model):
         super().save(*args, **kwargs)
 
 
+class BusinessDailyMetric(models.Model):
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="daily_metrics")
+    day = models.DateField()
+    event = models.CharField(max_length=24)
+    count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("business", "day", "event"), name="unique_business_daily_metric")]
+
+
 class BusinessImage(models.Model):
     business = models.ForeignKey(
         Business,
@@ -376,6 +386,7 @@ class AdvertisingSubscription(models.Model):
     agreed_price = models.DecimalField("valor contratado", max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
     auto_renew = models.BooleanField("renovacao automatica", default=True)
+    billing_anchor_day = models.PositiveSmallIntegerField(null=True, blank=True, editable=False)
     notes = models.TextField("observacoes", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -419,6 +430,7 @@ class Invoice(models.Model):
         "forma de pagamento", max_length=20, choices=PaymentMethod.choices, blank=True
     )
     external_reference = models.CharField("referencia externa", max_length=120, blank=True)
+    recurrence_key = models.CharField(max_length=100, unique=True, null=True, blank=True, editable=False)
     notes = models.TextField("observacoes", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -4,6 +4,7 @@ from django.db import transaction
 from rest_framework import serializers
 from .management_rules import ManagementValidationMixin
 from .images import PublicImageField, public_image_url
+from .benefits import business_benefits
 
 from .models import (
     Advertiser,
@@ -84,6 +85,9 @@ class BusinessSerializer(serializers.ModelSerializer):
             "services_products",
             "plan_type",
             "public_subdomain",
+            "meta_pixel_id",
+            "google_analytics_id",
+            "google_ads_id",
             "category",
             "category_name",
             "street",
@@ -141,6 +145,16 @@ class BusinessSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data["image_url"] = self.get_image_url(instance)
+        benefits = business_benefits(instance)
+        data["benefits"] = benefits
+        data["plan_type"] = benefits["plan_type"]
+        data["is_featured"] = data["is_featured"] and benefits["featured"]
+        data["images"] = data["images"][:benefits["max_images"]]
+        if not benefits["includes_custom_page"]:
+            data["public_subdomain"] = ""
+        if not benefits["includes_marketing"]:
+            for key in ("meta_pixel_id", "google_analytics_id", "google_ads_id"):
+                data[key] = ""
         return data
 
     def get_images(self, obj):
@@ -158,6 +172,11 @@ class BusinessSerializer(serializers.ModelSerializer):
 
 
 class BackofficeBusinessSerializer(ManagementValidationMixin, serializers.ModelSerializer):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["benefits"] = business_benefits(instance)
+        return data
+
     category = serializers.SlugRelatedField(
         slug_field="slug",
         queryset=Category.objects.all(),
@@ -245,7 +264,7 @@ class BackofficeBusinessSerializer(ManagementValidationMixin, serializers.ModelS
             raise serializers.ValidationError({"plan_type": "Subdominio e integracoes de marketing sao exclusivos do plano pago."})
         images = attrs.get("images")
         if images is not None:
-            limit = 5 if plan_type == Business.PlanType.PAID else 1
+            limit = business_benefits(self.instance)["max_images"] if self.instance and self.instance.subscriptions.exists() else (5 if plan_type == Business.PlanType.PAID else 1)
             if len(images) > limit:
                 raise serializers.ValidationError({"images": f"O plano permite no maximo {limit} imagem(ns)."})
         return attrs
@@ -264,6 +283,24 @@ class BackofficeBusinessSerializer(ManagementValidationMixin, serializers.ModelS
         if queryset.exists():
             raise serializers.ValidationError("Este endereco ja esta em uso por outra empresa.")
         return subdomain
+
+    def validate_meta_pixel_id(self, value):
+        value = value.strip()
+        if value and not re.fullmatch(r"[0-9]{5,30}", value):
+            raise serializers.ValidationError("Informe somente o identificador numérico do Meta Pixel.")
+        return value
+
+    def validate_google_analytics_id(self, value):
+        value = value.strip().upper()
+        if value and not re.fullmatch(r"G-[A-Z0-9]{3,20}", value):
+            raise serializers.ValidationError("Informe um ID de medição GA4 no formato G-XXXXXXXXXX.")
+        return value
+
+    def validate_google_ads_id(self, value):
+        value = value.strip().upper()
+        if value and not re.fullmatch(r"AW-[0-9]{5,20}", value):
+            raise serializers.ValidationError("Informe o identificador Google Ads no formato AW-123456789.")
+        return value
 
     def create(self, validated_data):
         tag_names = validated_data.pop("tags", [])
@@ -348,6 +385,13 @@ class CouponSerializer(serializers.ModelSerializer):
 
 
 class BackofficeCouponSerializer(ManagementValidationMixin, serializers.ModelSerializer):
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        business = attrs.get("business", getattr(self.instance, "business", None))
+        if business and attrs.get("is_active", getattr(self.instance, "is_active", True)) and not business_benefits(business)["includes_coupons"]:
+            raise serializers.ValidationError({"business": "O plano vigente deste estabelecimento não inclui cupons."})
+        return attrs
+
     business = serializers.SlugRelatedField(
         slug_field="slug",
         queryset=Business.objects.all(),
@@ -500,9 +544,16 @@ class AdvertisementSerializer(ManagementValidationMixin, serializers.ModelSerial
             )
         business = attrs.get("business", getattr(self.instance, "business", None))
         media = attrs.get("media")
+        if business and attrs.get("status", getattr(self.instance, "status", "draft")) != "ended":
+            benefits = business_benefits(business)
+            others = business.advertisements.exclude(status="ended")
+            if self.instance:
+                others = others.exclude(pk=self.instance.pk)
+            if others.count() >= benefits["max_ads"]:
+                raise serializers.ValidationError({"business": f"O plano permite até {benefits['max_ads']} anúncio(s) não encerrado(s)."})
         if business and media is not None:
             images = [item for item in media if item.get("media_type", "image") == AdvertisementMedia.MediaType.IMAGE]
-            limit = 5 if business.plan_type == Business.PlanType.PAID else 1
+            limit = business_benefits(business)["max_images"]
             if len(images) > limit:
                 raise serializers.ValidationError({"media": f"O plano {business.get_plan_type_display().lower()} permite no maximo {limit} imagem(ns)."})
         if business and attrs.get("is_featured", False) and business.plan_type != Business.PlanType.PAID:

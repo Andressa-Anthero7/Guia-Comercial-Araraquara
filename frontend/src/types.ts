@@ -1,4 +1,5 @@
 export interface Business {
+  benefits?: { plan_type: "free" | "paid"; max_images: number; max_ads: number; featured: boolean; includes_coupons: boolean; includes_marketing: boolean; includes_custom_page: boolean; source: string };
   id: string;
   slug?: string;
   name: string;
