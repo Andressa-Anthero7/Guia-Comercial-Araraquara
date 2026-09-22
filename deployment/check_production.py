@@ -7,7 +7,7 @@ import urllib.error
 import urllib.request
 
 API = "webapp415078.ip-45-79-2-160.cloudezapp.io"
-HOSTS = ["guiacomararaquara.com.br", "m-espetinhos.guiacomararaquara.com.br", API]
+HOSTS = ["guiacomararaquara.com.br", "barbearia-alcantara.guiacomararaquara.com.br", "m-espetinhos.guiacomararaquara.com.br", API]
 
 
 def check():
