@@ -17,7 +17,7 @@ import time
 import zipfile
 
 VERSION = '2.3.1'
-EXPECTED_DIGEST = 'cb8a1a81fdd334caac125b336584dda5fc409436c592587f33127efad669017d'
+EXPECTED_DIGEST = 'c0b374eddfc0862a0583a4a5a6e21097245234942cd3b3d9a92afbc59448ce63'
 HOME = Path.home()
 assert HOME.name in ('gca-backend', 'guia_comercial_araraquara')
 API = HOME.name == 'gca-backend'
@@ -75,7 +75,7 @@ def master():
     return masters[0]
 
 def prepare():
-    archive = HOME / f'gca-backoffice-{VERSION}.zip'
+    archive = HOME / f'gca-backoffice-{VERSION}-r2.zip'
     assert digest(archive) == EXPECTED_DIGEST, 'Archive checksum mismatch'
     assert not (STAGE/'installation.json').exists(), 'Already installed; verify instead'
     STAGE.mkdir(parents=True, exist_ok=True)
@@ -156,7 +156,9 @@ def install():
         command += ['--python',PYTHON]
     result=subprocess.run(command,capture_output=True,text=True)
     print(result.stdout)
+    save('installation-attempt.json', {'returncode': result.returncode, 'stdout': result.stdout, 'stderr': result.stderr})
     if result.returncode:
+        print(result.stderr.strip().splitlines()[-1] if result.stderr else 'No stderr from installer')
         raise RuntimeError('Installer failed; inspect backup before retrying')
     record={'version':VERSION,'installed_at':time.time(),'archive_sha256':EXPECTED_DIGEST}
     if API:

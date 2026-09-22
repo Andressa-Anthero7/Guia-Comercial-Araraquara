@@ -35,6 +35,14 @@ class InstallerTests(unittest.TestCase):
         self.assertTrue((self.root / "core/views.py").read_text().endswith("original"))
         self.assertFalse((self.root / "core/management.py").exists())
 
+    def test_new_files_do_not_inherit_privileged_parent_ownership(self):
+        with patch.object(installer.os, "chown", create=True) as chown, patch.object(installer.subprocess, "run"):
+            installer.apply(self.package, "api", self.root, "python")
+        # Only the pre-existing views.py has ownership to preserve. New files
+        # must not require membership in a managed directory's server group.
+        self.assertEqual(chown.call_count, 1)
+        self.assertTrue((self.root / "core/management.py").exists())
+
     def test_failed_application_check_restores_all_original_files(self):
         with patch.object(installer.subprocess, "run", side_effect=subprocess.CalledProcessError(1, ["check"])):
             with self.assertRaises(subprocess.CalledProcessError):

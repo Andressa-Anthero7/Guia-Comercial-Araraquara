@@ -103,7 +103,9 @@ def apply(package, target, root, python=None, check_only=False):
                 with os.fdopen(descriptor, "wb") as stream:
                     stream.write(source.read_bytes())
                 temporary.chmod(metadata.st_mode & 0o777 if destination.exists() else 0o644)
-                if hasattr(os, "chown"):
+                # New files belong to the deploying account. Copying the parent
+                # directory's group can require privileges on managed hosting.
+                if hasattr(os, "chown") and destination.exists():
                     os.chown(temporary, metadata.st_uid, metadata.st_gid)
                 os.replace(temporary, destination)
             finally:

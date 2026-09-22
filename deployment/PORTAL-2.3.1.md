@@ -1,5 +1,7 @@
 # Portal 2.3.1 — candidato após ensaio com banco real
 
+Revisão de pacote **r2**: o instalador mantém a propriedade da conta de deploy para arquivos novos, sem tentar copiar um grupo privilegiado do diretório pai. A tentativa r1 foi revertida e os 56 arquivos foram conferidos iguais aos backups; nenhuma migração chegou a ser executada. O código da aplicação da r2 é idêntico ao candidato 2.3.1 testado.
+
 Inclui as correções e funcionalidades descritas em [2.3.0](PORTAL-2.3.0.md), com preservação da versão aprovada durante a revisão de anúncios.
 
 O candidato 2.3.0 não foi instalado: o ensaio isolado identificou que retiraria duas empresas já publicadas cujos anúncios estão em revisão. A 2.3.1 acrescenta `core.0017_advertisement_published_snapshot`, preservando o perfil público e as datas da última versão aprovada enquanto o novo conteúdo aguarda análise. Uma revisão de anúncio pausado/encerrado não republica o perfil. Anúncios futuros/expirados continuam obedecendo às datas aprovadas.
