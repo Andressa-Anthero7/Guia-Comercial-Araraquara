@@ -14,6 +14,16 @@ class UploadSettingsTests(TestCase):
 
 
 class DatabaseSettingsTests(TestCase):
+    def test_debug_requires_explicit_opt_in(self):
+        from project import settings as project_settings
+        try:
+            with mock.patch.dict(os.environ, {}, clear=True):
+                self.assertFalse(importlib.reload(project_settings).DEBUG)
+            with mock.patch.dict(os.environ, {"DJANGO_DEBUG": "true"}):
+                self.assertTrue(importlib.reload(project_settings).DEBUG)
+        finally:
+            importlib.reload(project_settings)
+
     def test_database_url_configures_postgresql(self):
         with mock.patch.dict(
             os.environ,

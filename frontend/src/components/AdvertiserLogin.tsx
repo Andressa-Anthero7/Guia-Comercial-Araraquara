@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import "./advertiser-workspace.css";
 import { ArrowLeft, Eye, EyeOff, LockKeyhole, Store } from "lucide-react";
+import { PasswordRecovery } from "./PasswordRecovery";
 
 interface AdvertiserLoginProps {
   notice?: string;
@@ -14,6 +15,7 @@ export function AdvertiserLogin({ onLogin, onExit, notice }: AdvertiserLoginProp
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recovering, setRecovering] = useState(() => new URLSearchParams(window.location.search).has("token"));
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -28,6 +30,7 @@ export function AdvertiserLogin({ onLogin, onExit, notice }: AdvertiserLoginProp
     }
   };
 
+  if (recovering) return <PasswordRecovery onBack={() => setRecovering(false)} />;
   return (
     <main className="advertiser-login flex min-h-screen items-center justify-center bg-slate-100 p-4">
       <section className="w-full max-w-md border border-slate-300 bg-white p-7 shadow-xl">
@@ -46,6 +49,7 @@ export function AdvertiserLogin({ onLogin, onExit, notice }: AdvertiserLoginProp
           {error && <p role="alert" className="rounded-md bg-rose-50 p-3 text-sm font-semibold text-rose-700">{error}</p>}
           <button disabled={isSubmitting} className="h-11 w-full rounded-md bg-slate-950 px-4 font-bold text-white disabled:opacity-60">{isSubmitting ? "Entrando..." : "Entrar"}</button>
         </form>
+        <button type="button" onClick={() => setRecovering(true)} className="mt-4 block text-sm font-semibold text-slate-600">Esqueci minha senha</button>
         <button type="button" onClick={onExit} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-600"><ArrowLeft className="h-4 w-4" />Voltar ao guia</button>
       </section>
     </main>

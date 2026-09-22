@@ -1,34 +1,26 @@
 import { useState } from "react";
 import { Event } from "../types";
-import { Calendar, MapPin, Sparkles, Star, Heart } from "lucide-react";
+import { Calendar, MapPin, Bookmark } from "lucide-react";
 
 interface EventSectionProps {
   events: Event[];
 }
 
 export function EventSection({ events }: EventSectionProps) {
-  // Local state to keep track of interested count per event ID
-  const [interestedMap, setInterestedMap] = useState<Record<string, { count: number; active: boolean }>>({
-    e1: { count: 124, active: false },
-    e2: { count: 342, active: false },
-    e3: { count: 88, active: false }
+  const [savedEvents, setSavedEvents] = useState<string[]>(() => {
+    try {
+      const saved: unknown = JSON.parse(localStorage.getItem("gca_saved_events") || "[]");
+      return Array.isArray(saved) ? saved.filter((id): id is string => typeof id === "string") : [];
+    } catch { return []; }
   });
-
-  const handleInterestToggle = (eventId: string) => {
-    setInterestedMap((prev) => {
-      const current = prev[eventId] || { count: 20, active: false };
-      if (current.active) {
-        return {
-          ...prev,
-          [eventId]: { count: current.count - 1, active: false }
-        };
-      } else {
-        return {
-          ...prev,
-          [eventId]: { count: current.count + 1, active: true }
-        };
-      }
-    });
+  const [saveError, setSaveError] = useState("");
+  const toggleSaved = (eventId: string) => {
+    const next = savedEvents.includes(eventId) ? savedEvents.filter(id => id !== eventId) : [...savedEvents, eventId];
+    try {
+      localStorage.setItem("gca_saved_events", JSON.stringify(next));
+      setSavedEvents(next);
+      setSaveError("");
+    } catch { setSaveError("Não foi possível salvar neste navegador. Verifique se o armazenamento está permitido e tente novamente."); }
   };
 
   return (
@@ -52,10 +44,12 @@ export function EventSection({ events }: EventSectionProps) {
           </div>
         </div>
 
+        {saveError && <p role="alert" className="mb-4 text-sm text-rose-700">{saveError}</p>}
+        {!events.length && <p className="rounded-2xl border border-stone-200 bg-white p-6 text-sm text-stone-500">Nenhum evento publicado no momento. Volte em breve para conferir a programação.</p>}
         {/* Events Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {events.map((event) => {
-            const interest = interestedMap[event.id] || { count: 15, active: false };
+            const saved = savedEvents.includes(event.id);
             
             return (
               <div 
@@ -109,24 +103,24 @@ export function EventSection({ events }: EventSectionProps) {
                     {event.description}
                   </p>
 
-                  <div className="mt-6 pt-4 border-t border-stone-100 flex items-center justify-between">
-                    {/* Interested Counter */}
+                  <div className="mt-6 pt-4 border-t border-stone-100 flex flex-wrap gap-3 items-center justify-between">
                     <span className="text-xs text-stone-500 font-medium">
-                      🔥 <span className="font-bold text-stone-800">{interest.count}</span> pessoas interessadas
+                      {saved ? "Salvo neste navegador" : "Guarde para consultar depois"}
                     </span>
 
                     {/* Interest Action Button */}
                     <button
-                      onClick={() => handleInterestToggle(event.id)}
+                      onClick={() => toggleSaved(event.id)}
+                      aria-pressed={saved}
                       className={`flex items-center space-x-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
-                        interest.active
+                        saved
                           ? "bg-rose-50 text-rose-600 border border-rose-200"
                           : "bg-stone-100 text-stone-700 hover:bg-stone-200"
                       }`}
                       id={`event-interest-btn-${event.id}`}
                     >
-                      <Heart className={`h-3.5 w-3.5 ${interest.active ? "fill-rose-500 text-rose-500" : ""}`} />
-                      <span>{interest.active ? "Tenho Interesse" : "Me Interessa"}</span>
+                      <Bookmark className={`h-3.5 w-3.5 ${saved ? "fill-rose-500 text-rose-500" : ""}`} />
+                      <span>{saved ? "Evento salvo" : "Salvar evento"}</span>
                     </button>
                   </div>
 

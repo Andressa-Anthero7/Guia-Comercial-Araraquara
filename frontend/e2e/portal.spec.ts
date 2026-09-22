@@ -129,6 +129,59 @@ test.beforeEach(async ({ page }) => {
   await mockApi(page);
 });
 
+test("marketing inicia apenas na página da empresa e envia para os IDs dela", async ({ page }) => {
+  const paid = { ...businesses[0], meta_pixel_id: "123456789", google_analytics_id: "G-TEST123", google_ads_id: "AW-123456" };
+  await page.route("**/api/businesses/", route => route.fulfill({ json: [paid] }));
+  await page.route("https://www.googletagmanager.com/**", route => route.fulfill({ contentType: "text/javascript", body: "" }));
+  await page.route("https://connect.facebook.net/**", route => route.fulfill({ contentType: "text/javascript", body: "" }));
+  await page.goto("/?empresa=cafe-central");
+  await expect(page.locator("#business-detail-modal")).toBeVisible();
+  await expect(page.locator("#gca-google-tag, #gca-meta-pixel")).toHaveCount(0);
+  await page.goto("/?subdomain=cafe-central");
+  await expect(page.getByRole("heading", { name: "Cafe Central", exact: true })).toBeVisible();
+  await expect(page.locator("#gca-google-tag")).toHaveAttribute("src", /G-TEST123/);
+  const tracking = await page.evaluate(() => ({
+    google: (window.dataLayer || []).map((entry: any) => Array.from(entry)),
+    meta: window.fbq?.queue,
+  }));
+  expect(tracking.google).toContainEqual(["config", "G-TEST123", { send_page_view: false }]);
+  expect(tracking.google).toContainEqual(["config", "AW-123456", { send_page_view: false }]);
+  expect(tracking.google).toContainEqual(["event", "page_view", { send_to: ["G-TEST123", "AW-123456"], page_title: "Cafe Central" }]);
+  expect(tracking.meta).toContainEqual(["trackSingle", "123456789", "PageView"]);
+});
+
+test("recuperação preserva e-mail após falha e confirma o envio", async ({ page }) => {
+  let unavailable = true;
+  await page.route("**/api/auth/password-reset/", route => route.fulfill({
+    status: unavailable ? 503 : 200,
+    json: { detail: unavailable ? "Envio indisponível. Tente novamente." : "Se o e-mail estiver vinculado, você receberá um link." },
+  }));
+  await page.goto("/anunciante/login");
+  await page.getByRole("button", { name: "Esqueci minha senha" }).click();
+  await page.getByLabel("E-mail", { exact: true }).fill("cliente@example.test");
+  await page.getByRole("button", { name: "Enviar link" }).click();
+  await expect(page.getByRole("alert")).toContainText("Envio indisponível");
+  await expect(page.getByLabel("E-mail", { exact: true })).toHaveValue("cliente@example.test");
+  unavailable = false;
+  await page.getByRole("button", { name: "Enviar link" }).click();
+  await expect(page.getByRole("status")).toContainText("você receberá um link");
+});
+
+test("link de recuperação mantém token no redirecionamento e permite definir senha", async ({ page }) => {
+  await page.route("**/api/auth/password-reset/confirm/", route => route.fulfill({ json: { detail: "Senha redefinida." } }));
+  await page.goto("/anunciante/?uid=MQ&token=test-token");
+  await expect(page.getByRole("heading", { name: "Definir nova senha" })).toBeVisible();
+  await page.getByLabel("Nova senha", { exact: true }).fill("New-private-pass-834!");
+  await page.getByLabel("Confirmar senha", { exact: true }).fill("New-private-pass-834!");
+  const submitted = page.waitForRequest(request => request.url().endsWith("/password-reset/confirm/") && request.method() === "POST");
+  await page.getByRole("button", { name: "Salvar nova senha" }).click();
+  expect((await submitted).postDataJSON()).toEqual({ uid: "MQ", token: "test-token", password: "New-private-pass-834!" });
+  await expect(page.getByRole("status")).toHaveText("Senha redefinida.");
+  await page.getByRole("button", { name: "Voltar ao login" }).click();
+  await expect(page.getByRole("button", { name: "Entrar", exact: true })).toBeVisible();
+  expect(new URL(page.url()).search).toBe("");
+});
+
 test("permite pesquisar e abrir os detalhes de um anunciante publico", async ({ page }) => {
   await page.goto("/");
 

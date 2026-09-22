@@ -1,9 +1,12 @@
 import { ArrowLeft, Store } from "lucide-react";
+import { useEffect } from "react";
+import { initializeMarketing } from "../utils/marketing";
 import { BusinessProfile, type BusinessProfileProps } from "./BusinessProfile";
 
 const GUIDE_URL = "https://www.guiacomararaquara.com.br";
 
 export function BusinessLandingPage(props: BusinessProfileProps) {
+  useEffect(() => { initializeMarketing(props.business); }, [props.business]);
   return (
     <div className="min-h-screen bg-stone-100/70 text-stone-900">
       <header className="border-b border-stone-200 bg-white">

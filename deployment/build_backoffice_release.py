@@ -12,9 +12,14 @@ if not (dist / "index.html").is_file():
     raise SystemExit("Execute npm run build no frontend antes de empacotar.")
 output = root / "output/backoffice-v2"
 output.mkdir(parents=True, exist_ok=True)
+archive = output / f"gca-backoffice-{version}.zip"
+if archive.exists():
+    raise SystemExit(f"Pacote já existente: {archive}. Use uma nova versão; não sobrescreva uma entrega.")
 files = {}
-for name in ("admin.py", "images.py", "models.py", "management.py", "management_rules.py", "serializers.py", "urls.py", "views.py"):
-    files[f"api/core/{name}"] = root / "backend/core" / name
+for source in (root / "backend/core").glob("*.py"):
+    if not source.name.startswith("test"):
+        files[f"api/core/{source.name}"] = source
+files["api/run_billing.py"] = root / "backend/run_billing.py"
 for source in (root / "backend/core/migrations").glob("*.py"):
     files[f"api/core/migrations/{source.name}"] = source
 for source in dist.rglob("*"):

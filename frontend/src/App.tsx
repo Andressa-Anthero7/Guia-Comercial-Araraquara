@@ -1,5 +1,5 @@
 import { advertiserAuthTarget, advertiserRouteEvent } from "./advertiserRoutes";
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
@@ -9,15 +9,15 @@ import { BusinessModal } from "./components/BusinessModal";
 import { CouponSection } from "./components/CouponSection";
 import { EventSection } from "./components/EventSection";
 import { UsefulNumbersSection } from "./components/UsefulNumbersSection";
-import { BusinessFormModal } from "./components/BusinessFormModal";
 import { BusinessLandingPage } from "./components/BusinessLandingPage";
 import { Footer } from "./components/Footer";
 import { PortalStatus } from "./components/PortalStatus";
 import { refreshCategories } from "./categories";
-import { Backoffice } from "./management/Management";
-import { BackofficeLogin } from "./components/BackofficeLogin";
-import { AdvertiserLogin } from "./components/AdvertiserLogin";
-import { AdvertiserPortal } from "./components/AdvertiserPortal";
+const Backoffice = lazy(() => import("./management/Management").then(module => ({ default: module.Backoffice })));
+const BackofficeLogin = lazy(() => import("./components/BackofficeLogin").then(module => ({ default: module.BackofficeLogin })));
+const AdvertiserLogin = lazy(() => import("./components/AdvertiserLogin").then(module => ({ default: module.AdvertiserLogin })));
+const AdvertiserPortal = lazy(() => import("./components/AdvertiserPortal").then(module => ({ default: module.AdvertiserPortal })));
+const BusinessFormModal = lazy(() => import("./components/BusinessFormModal").then(module => ({ default: module.BusinessFormModal })));
 
 import { Business, Review, Coupon, Event, UsefulNumber } from "./types";
 import {
@@ -39,6 +39,7 @@ import {
 import { SlidersHorizontal, Sparkles, Building2, Store } from "lucide-react";
 
 const GUIDE_DOMAIN = "guiacomararaquara.com.br";
+const viewLoading = <div role="status" className="flex min-h-screen items-center justify-center text-stone-600">Carregando...</div>;
 
 function tenantSubdomain(hostname: string) {
   const normalizedHost = hostname.toLowerCase().replace(/\.$/, "");
@@ -287,13 +288,13 @@ export default function App() {
       return <div className="flex min-h-screen items-center justify-center bg-slate-100 text-sm font-semibold text-slate-600">Carregando acesso...</div>;
     }
     if (!backofficeSession.is_advertiser) {
-      return <AdvertiserLogin notice={advertiserLoginNotice} onLogin={async (username, password) => {
+      return <Suspense fallback={viewLoading}><AdvertiserLogin notice={advertiserLoginNotice} onLogin={async (username, password) => {
         const session = await loginAdvertiser(username, password);
         setBackofficeSession(session);
         setAdvertiserLoginNotice("");
-      }} onExit={() => { window.location.href = "https://guiacomararaquara.com.br/"; }} />;
+      }} onExit={() => { window.location.href = "https://guiacomararaquara.com.br/"; }} /></Suspense>;
     }
-    return <AdvertiserPortal onSessionExpired={() => {
+    return <Suspense fallback={viewLoading}><AdvertiserPortal onSessionExpired={() => {
       setBackofficeSession({ is_authenticated: false, is_backoffice: false, is_advertiser: false, username: "", name: "", email: "" });
       setIsBackofficeAuthenticated(false);
       setAdvertiserLoginNotice("Sua sessão expirou. Entre novamente para continuar.");
@@ -303,7 +304,7 @@ export default function App() {
       setCurrentPath("/anunciante/login");
       setBackofficeSession({ is_authenticated: false, is_backoffice: false, is_advertiser: false, username: "", name: "", email: "" });
       setAdvertiserLoginNotice("");
-    }} />;
+    }} /></Suspense>;
   }
 
   if (currentPath.startsWith("/backoffice")) {
@@ -330,7 +331,7 @@ export default function App() {
     }
     if (!isBackofficeAuthenticated) {
       return (
-        <BackofficeLogin
+        <Suspense fallback={viewLoading}><BackofficeLogin
           onLogin={async (username, password) => {
             const session = await loginBackoffice(username, password);
             setBackofficeSession(session);
@@ -339,11 +340,11 @@ export default function App() {
           onExit={() => {
             window.location.href = "https://guiacomararaquara.com.br/";
           }}
-        />
+        /></Suspense>
       );
     }
     return (
-      <Backoffice
+      <Suspense fallback={viewLoading}><Backoffice
         businesses={businesses}
         onSaveBusiness={handleSaveBackofficeBusiness}
         onChangeBusinessStatus={handleChangeBackofficeBusinessStatus}
@@ -363,7 +364,7 @@ export default function App() {
           });
           window.location.href = "https://guiacomararaquara.com.br/";
         }}
-      />
+      /></Suspense>
     );
   }
 
@@ -565,10 +566,10 @@ export default function App() {
 
       {/* --- ADD NEW BUSINESS FORM MODAL --- */}
       {isRegisterModalOpen && (
-        <BusinessFormModal
+        <Suspense fallback={viewLoading}><BusinessFormModal
           onClose={() => setIsRegisterModalOpen(false)}
           onSubmit={handleRegisterBusiness}
-        />
+        /></Suspense>
       )}
 
     </div>

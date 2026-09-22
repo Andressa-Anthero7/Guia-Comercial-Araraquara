@@ -9,11 +9,18 @@ interface UsefulNumbersSectionProps {
 export function UsefulNumbersSection({ numbers }: UsefulNumbersSectionProps) {
   const [filterQuery, setFilterQuery] = useState("");
   const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
+  const [copyError, setCopyError] = useState("");
 
-  const handleCopyPhone = (phone: string) => {
-    navigator.clipboard.writeText(phone);
-    setCopiedPhone(phone);
-    setTimeout(() => setCopiedPhone(null), 2000);
+  const handleCopyPhone = async (phone: string) => {
+    setCopyError("");
+    setCopiedPhone(null);
+    try {
+      await navigator.clipboard.writeText(phone);
+      setCopiedPhone(phone);
+      setTimeout(() => setCopiedPhone(current => current === phone ? null : current), 2000);
+    } catch {
+      setCopyError(`Não foi possível copiar. Copie o número manualmente: ${phone}`);
+    }
   };
 
   const filteredNumbers = numbers.filter(
@@ -59,6 +66,7 @@ export function UsefulNumbersSection({ numbers }: UsefulNumbersSectionProps) {
 
         </div>
 
+        {copyError && <p role="alert" className="mb-4 text-sm text-rose-700">{copyError}</p>}
         {/* Numbers Layout */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredNumbers.map((num, i) => {
@@ -119,9 +127,9 @@ export function UsefulNumbersSection({ numbers }: UsefulNumbersSectionProps) {
 
                   {/* Click to Copy */}
                   <button
-                    onClick={() => handleCopyPhone(num.phone)}
+                    onClick={() => void handleCopyPhone(num.phone)}
                     className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition-colors cursor-pointer"
-                    title="Copiar número"
+                    title={isCopied ? "Número copiado" : "Copiar número"}
                     id={`copy-phone-btn-${i}`}
                   >
                     {isCopied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
