@@ -1,0 +1,1 @@
+﻿{"schedule": "06:15 daily in server timezone", "crontab_backup": "/home/gca-backend/operations/crontab-before-billing-1790104483937592268.txt", "first_run": {"at": "2026-09-22T19:14:44.833718+00:00", "result": {"created": 0, "existing": 0, "processed": 0}}, "verified": true}
