@@ -1,0 +1,12 @@
+{% autoescape off %}Guia Comercial Araraquara
+
+{{ title }}
+{% for paragraph in paragraphs %}
+{{ paragraph }}
+{% endfor %}
+{% if url %}{{ action }}:
+{{ url }}
+{% endif %}
+Mensagem automática relacionada à sua conta ou cadastro no Guia Comercial Araraquara.
+Este endereço não recebe respostas. Em caso de dúvida, procure o atendimento pelo site.
+{% endautoescape %}

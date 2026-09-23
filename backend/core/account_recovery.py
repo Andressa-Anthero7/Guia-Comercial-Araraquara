@@ -1,18 +1,18 @@
 """Advertiser password recovery with expiring, single-use Django tokens."""
-import os
 from smtplib import SMTPException
 
 from django.conf import settings
 from django.contrib.auth import get_user_model, password_validation
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError
-from django.core.mail import EmailMessage, get_connection
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import SimpleRateThrottle
+
+from .email_service import email_connection, deliver, portal_url
 
 
 class RecoveryThrottle(SimpleRateThrottle):
@@ -23,36 +23,15 @@ class RecoveryThrottle(SimpleRateThrottle):
         return self.cache_format % {"scope": self.scope, "ident": self.get_ident(request)}
 
 
-def email_connection():
-    backend = settings.EMAIL_BACKEND
-    if backend != "django.core.mail.backends.smtp.EmailBackend":
-        return get_connection(backend=backend)
-    host = os.environ.get("EMAIL_HOST", settings.EMAIL_HOST)
-    if not host or host == "localhost":
-        return None
-    use_ssl = os.environ.get("EMAIL_USE_SSL", "false").lower() == "true"
-    use_tls = os.environ.get("EMAIL_USE_TLS", "false" if use_ssl else "true").lower() == "true"
-    try:
-        port = int(os.environ.get("EMAIL_PORT", "465" if use_ssl else "587"))
-    except ValueError:
-        return None
-    if not 1 <= port <= 65535 or (use_ssl and use_tls):
-        return None
-    return get_connection(host=host, port=port,
-        username=os.environ.get("EMAIL_HOST_USER", settings.EMAIL_HOST_USER),
-        password=os.environ.get("EMAIL_HOST_PASSWORD", settings.EMAIL_HOST_PASSWORD),
-        use_tls=use_tls, use_ssl=use_ssl, timeout=15)
-
-
 def send_access_link(user, connection):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
-    origin = os.environ.get("GCA_AUTH_ORIGIN", "https://guiacomararaquara.com.br").rstrip("/")
-    url = f"{origin}/anunciante/login?uid={uid}&token={token}"
-    EmailMessage("Acesso à Área do Anunciante — Guia Comercial Araraquara",
-        f"Olá!\n\nUse este link para definir uma nova senha de acesso:\n{url}\n\n"
-        "O link expira e só pode ser usado uma vez. Se não solicitou esta mensagem, ignore-a.\n",
-        os.environ.get("DEFAULT_FROM_EMAIL", settings.DEFAULT_FROM_EMAIL), [user.email], connection=connection).send()
+    url = portal_url(f"/anunciante/login?uid={uid}&token={token}")
+    deliver(user.email, "Redefina sua senha", [
+        "Olá! Recebemos uma solicitação para redefinir a senha da sua conta.",
+        f"O link é de uso único e expira em {settings.PASSWORD_RESET_TIMEOUT // 60} minutos. Se não solicitou, ignore esta mensagem; sua senha permanece a mesma.",
+    ], url=url, action="Definir nova senha", connection=connection)
+
 
 
 @api_view(["POST"])
@@ -70,7 +49,7 @@ def request_password_reset(request):
     try:
         for user in users:
             send_access_link(user, connection)
-    except (SMTPException, OSError):
+    except (SMTPException, OSError, ValueError):
         return Response({"detail": "Não foi possível enviar a mensagem agora. Tente novamente mais tarde."}, status=503)
     return Response({"detail": "Se o e-mail estiver vinculado a uma conta ativa, você receberá um link para redefinir a senha."})
 

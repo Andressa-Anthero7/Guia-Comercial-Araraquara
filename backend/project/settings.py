@@ -155,3 +155,14 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.MultiPartParser",
     ],
 }
+
+# SMTP secrets are injected by the host, never committed. Automatic events and
+# delivery are enabled separately after the sender/domain have been validated.
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Guia Comercial Araraquara <nao-responda@guiacomararaquara.com.br>')
+GCA_EMAIL_EVENTS_ENABLED = os.environ.get('GCA_EMAIL_EVENTS_ENABLED', 'false').lower() == 'true'
+GCA_EMAIL_DELIVERY_ENABLED = os.environ.get('GCA_EMAIL_DELIVERY_ENABLED', 'false').lower() == 'true'
+PASSWORD_RESET_TIMEOUT = 3600

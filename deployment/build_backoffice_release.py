@@ -28,6 +28,10 @@ for source in (root / "backend/core").glob("*.py"):
     if not source.name.startswith("test"):
         files[f"api/core/{source.name}"] = source
 files["api/run_billing.py"] = root / "backend/run_billing.py"
+files["api/run_email.py"] = root / "backend/run_email.py"
+for source in (root / "backend/core/templates").rglob("*"):
+    if source.is_file():
+        files[f"api/core/templates/{source.relative_to(root / 'backend/core/templates').as_posix()}"] = source
 for source in (root / "backend/core/migrations").glob("*.py"):
     files[f"api/core/migrations/{source.name}"] = source
 for source in dist.rglob("*"):

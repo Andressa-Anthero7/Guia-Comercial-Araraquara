@@ -19,6 +19,36 @@ def make_unique_slug(instance, value):
     return slug
 
 
+class TransactionalEmail(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pendente'
+        SENDING = 'sending', 'Em envio'
+        SENT = 'sent', 'Aceito pelo servidor de e-mail'
+        FAILED = 'failed', 'Falhou'
+        EXPIRED = 'expired', 'Expirado'
+
+    event_key = models.CharField(max_length=180, unique=True)
+    kind = models.CharField(max_length=40)
+    recipient = models.EmailField()
+    title = models.CharField(max_length=180)
+    paragraphs = models.JSONField(default=list)
+    guard = models.JSONField(default=dict, blank=True)
+    url = models.URLField(max_length=500, blank=True)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    last_error = models.CharField(max_length=80, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    available_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField()
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['status', 'available_at'], name='email_pending_idx')]
+        verbose_name = 'e-mail transacional'
+        verbose_name_plural = 'e-mails transacionais'
+
+
 class Category(models.Model):
     name = models.CharField("nome", max_length=120)
     slug = models.SlugField("slug", max_length=140, unique=True, blank=True)
