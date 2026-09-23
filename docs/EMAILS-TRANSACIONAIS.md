@@ -1,5 +1,7 @@
 # E-mails transacionais do Guia
 
+> **23/09 ? atualiza??o:** m?dulo publicado na 2.3.2, migra??o 0018 aplicada e configura??es preparadas. SMTP ainda n?o provisionado; captura e envio desativados, sem worker agendado. Consulte [fechamento](CONCLUSAO-2026-09-23.md).
+
 Remetente escolhido: **nao-responda@guiacomararaquara.com.br**.
 
 Implementação preparada em 23/09/2026. Não houve envio real, configuração de uma caixa postal, ativação do SMTP ou publicação deste módulo no servidor nesta rodada. A confirmação de DNS/SSL do site, remetente e serviço SMTP precede a ativação. O endereço escolhido precisa ser autorizado pelo provedor de envio; colocá-lo na configuração não cria uma caixa postal.

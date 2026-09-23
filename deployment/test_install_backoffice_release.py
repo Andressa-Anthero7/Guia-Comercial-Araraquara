@@ -51,6 +51,27 @@ class InstallerTests(unittest.TestCase):
         self.assertFalse((self.root / "core/management.py").exists())
         self.assertEqual((self.root / "manage.py").read_text(), "original manage")
 
+    def test_public_files_do_not_require_privileged_ownership_and_index_is_last(self):
+        (self.root / 'index.html').write_text('Guia Comercial Araraquara old')
+        (self.package / 'public').mkdir()
+        files = {}
+        for name, content in [('index.html', 'Guia Comercial Araraquara new'), ('asset.js', 'new asset')]:
+            (self.package / 'public' / name).write_text(content)
+            files['public/' + name] = hashlib.sha256(content.encode()).hexdigest()
+        (self.package / 'manifest.json').write_text(json.dumps({'version': 'test', 'files': files}))
+        with patch.object(installer.os, 'chown', create=True, side_effect=PermissionError) as chown, patch.object(installer.os, 'replace', wraps=installer.os.replace) as replace:
+            installer.apply(self.package, 'public', self.root)
+        chown.assert_not_called()
+        self.assertEqual([item.args[1].name for item in replace.call_args_list], ['asset.js', 'index.html'])
+        self.assertEqual((self.root / 'index.html').read_text(), 'Guia Comercial Araraquara new')
+
+    def test_failed_ownership_before_replace_does_not_attempt_restore(self):
+        with patch.object(installer.os, 'chown', create=True, side_effect=PermissionError), patch.object(installer.shutil, 'copy2', wraps=installer.shutil.copy2) as copy:
+            with self.assertRaises(PermissionError):
+                installer.apply(self.package, 'api', self.root, 'python')
+        self.assertEqual(copy.call_count, 1)  # backup only; original was never changed
+        self.assertTrue((self.root / 'core/views.py').read_text().endswith('original'))
+
     def test_applies_only_listed_files_after_checksum_and_identity_checks(self):
         with patch.object(installer.subprocess, "run") as check:
             installer.apply(self.package, "api", self.root, "python")

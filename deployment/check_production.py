@@ -28,14 +28,15 @@ def check():
             else:
                 assert "Guia Comercial Araraquara" in body
         checks.append({"host": host, "status": 200, "certificate_days": days})
-    try:
-        urllib.request.urlopen(f"https://{API}/api/__gca_monitor_missing__/", timeout=20)
-    except urllib.error.HTTPError as response:
-        body = response.read().decode(errors="replace")
-        assert response.code == 404
-        assert "Using the URLconf" not in body and "DEBUG = True" not in body
-    else:
-        raise RuntimeError("Expected a 404 for unknown routes")
+    for host in ["guiacomararaquara.com.br", API]:
+        try:
+            urllib.request.urlopen(f"https://{host}/api/__gca_monitor_missing__/", timeout=20)
+        except urllib.error.HTTPError as response:
+            body = response.read().decode(errors="replace")
+            assert response.code == 404, f"Unexpected error status on {host}"
+            assert "Using the URLconf" not in body and "DEBUG = True" not in body, f"Debug page exposed on {host}"
+        else:
+            raise RuntimeError(f"Expected a 404 for unknown routes on {host}")
     return checks
 
 

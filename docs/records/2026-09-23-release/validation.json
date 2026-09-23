@@ -1,0 +1,23 @@
+{
+  "version": "2.3.2",
+  "local": {
+    "django_tests": 76,
+    "browser_scenarios": 54,
+    "real_api_integrations": 3,
+    "operational_tests": 10,
+    "typescript": "passed",
+    "build": "passed",
+    "migration_consistency": "passed"
+  },
+  "production": {
+    "api_files_verified": 64,
+    "public_files_verified": 20,
+    "existing_core_tables_preserved_at_install": 21,
+    "public_browser_checks": 12,
+    "authenticated_profile_viewport_checks": 4,
+    "test_accounts_removed": 2,
+    "test_business_removed": true,
+    "test_sessions_removed": 1
+  },
+  "package_sha256": "e530ed5c3fd1b1f092fb25a9028bc3444c72ac7e42a51d953b31577613377875"
+}

@@ -1,5 +1,9 @@
 # Auditoria de funcionalidades e entrega — 22/09/2026
 
+> **Retomada conclu?da em 23/09:** vers?o 2.3.2 publicada, testes e verifica??es atuais em [fechamento t?cnico](CONCLUSAO-2026-09-23.md). Os registros abaixo s?o hist?ricos.
+
+> **Atualização de 23/09:** domínio principal e os dois subdomínios de clientes passaram na validação HTTPS no frontend `app33`. Consulte a [operação aprovada com aliases individuais](OPERACAO-SUBDOMINIOS-2026-09-23.md); o bloqueio SSL descrito na auditoria abaixo é histórico.
+
 > **Atualização posterior:** versão 2.3.1 r2 publicada, DEBUG corrigido e eventos ajustados. Consulte [execução e bloqueios atuais](EXECUCAO-2026-09-22.md) e [quadro atualizado](QUADRO-ENTREGA-GCA.xlsm). O texto abaixo registra o diagnóstico inicial, anterior às correções e ao deploy.
 
 **Parecer: entrega integral ainda não aprovada.** O domínio principal e a API respondem, mas os dois subdomínios de clientes apresentam certificado incompatível e a API expõe páginas de depuração. Há funcionalidades locais ainda não publicadas e integrações sem validação real.

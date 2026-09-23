@@ -92,10 +92,10 @@ def apply(package, target, root, python=None, check_only=False):
     print(f"Backup: {backup}")
     modified = []
     try:
-        for source, destination in selected:
+        # Publish the SPA entry point only after its hashed assets are present.
+        for source, destination in sorted(selected, key=lambda item: item[1].name == 'index.html'):
             metadata = destination.stat() if destination.exists() else destination.parent.stat() if destination.parent.exists() else root.stat()
             destination.parent.mkdir(parents=True, exist_ok=True)
-            modified.append(destination)
             # The destination was resolved and checked before opening it.
             descriptor, name = tempfile.mkstemp(prefix=".gca-write-", dir=destination.parent)
             temporary = Path(name)
@@ -105,9 +105,12 @@ def apply(package, target, root, python=None, check_only=False):
                 temporary.chmod(metadata.st_mode & 0o777 if destination.exists() else 0o644)
                 # New files belong to the deploying account. Copying the parent
                 # directory's group can require privileges on managed hosting.
-                if hasattr(os, "chown") and destination.exists():
+                # Static hosting serves public files as the deploying user;
+                # its managed group may not be assignable by that user.
+                if target == "api" and hasattr(os, "chown") and destination.exists():
                     os.chown(temporary, metadata.st_uid, metadata.st_gid)
                 os.replace(temporary, destination)
+                modified.append(destination)
             finally:
                 temporary.unlink(missing_ok=True)
         if target == "api":

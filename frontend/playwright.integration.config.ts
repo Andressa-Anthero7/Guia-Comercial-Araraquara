@@ -22,7 +22,7 @@ export default defineConfig({
       timeout: 60000,
     },
     {
-      command: "npm run dev -- --port=3001 --host=127.0.0.1 --strictPort",
+      command: `"${process.execPath}" node_modules/vite/bin/vite.js --port=3001 --host=127.0.0.1 --strictPort`,
       url: "http://127.0.0.1:3001",
       env: { GCA_API_PROXY_TARGET: "http://127.0.0.1:8001" },
       reuseExistingServer: false,

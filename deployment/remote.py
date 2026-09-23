@@ -8,11 +8,13 @@ from pathlib import Path
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("script", type=Path)
-    parser.add_argument("--account", choices=["api", "public"], default="api")
-    parser.add_argument("--action", choices=["prepare", "install", "verify"])
+    parser.add_argument("--account", choices=["api", "public", "app33"], default="api")
+    parser.add_argument("--action", choices=["prepare", "install", "verify", "cleanup"])
     args = parser.parse_args()
     account = "gca-backend" if args.account == "api" else "guia_comercial_araraquara"
     identity = "cloudez_gca_backend" if args.account == "api" else "cloudez_guia_comercial_araraquara"
+    if args.account == "app33":
+        account, identity = "app33", "codex_cloudez_app33"
     python = "/srv/gca-backend.2d4f02a0.configr.cloud/.virtualenv/3.12/bin/python" if args.account == "api" else "python3"
     command = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", "-i", str(Path.home()/".ssh"/identity),
                f"{account}@ip-45-79-2-160.cloudezapp.io", python + " -" + (" " + shlex.quote(args.action) if args.action else "")]

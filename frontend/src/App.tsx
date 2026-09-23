@@ -384,9 +384,10 @@ export default function App() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-stone-50 p-6 text-center">
         <div className="max-w-md rounded-2xl border border-stone-200 bg-white p-8 shadow-sm">
-          <h1 className="text-xl font-extrabold text-stone-900">Pagina indisponivel</h1>
-          <p className="mt-3 text-sm leading-relaxed text-stone-600">Esta pagina de empresa nao existe ou ainda nao foi publicada.</p>
-          <a href="https://www.guiacomararaquara.com.br" className="mt-6 inline-flex rounded-xl bg-stone-900 px-4 py-3 text-sm font-bold text-white">Ir para o Guia Comercial</a>
+          <h1 className="text-xl font-extrabold text-stone-900">Empresa não encontrada</h1>
+          <p className="mt-3 text-sm leading-relaxed text-stone-600">Não encontramos uma empresa publicada neste endereço. Confira se o nome foi digitado corretamente ou procure a empresa no guia.</p>
+          <p className="mt-3 break-all text-sm font-medium text-stone-700">Endereço consultado: {currentTenantSubdomain}</p>
+          <a href="https://guiacomararaquara.com.br" className="mt-6 inline-flex rounded-xl bg-stone-900 px-4 py-3 text-sm font-bold text-white">Encontrar empresas no guia</a>
         </div>
       </main>
     );
