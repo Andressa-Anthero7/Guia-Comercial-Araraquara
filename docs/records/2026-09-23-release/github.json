@@ -1,0 +1,14 @@
+{
+  "ci": {
+    "conclusion": "success",
+    "headSha": "44f738a34da59b11b7cfed29b96d022a26a8560b",
+    "status": "completed",
+    "url": "https://github.com/Andressa-Anthero7/Guia-Comercial-Araraquara/actions/runs/35913682031"
+  },
+  "monitor": {
+    "conclusion": "success",
+    "headSha": "cb8a2f844a9f6d3c774f23fa09b3dd968da12623",
+    "status": "completed",
+    "url": "https://github.com/Andressa-Anthero7/Guia-Comercial-Araraquara/actions/runs/35914023025"
+  }
+}

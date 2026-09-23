@@ -15,7 +15,9 @@
 
 ## Verificação
 
-76 testes Django, 54 cenários de navegador, três integrações com API real e dez testes operacionais passaram localmente. TypeScript, build e consistência de migrações aprovados. A primeira chamada de testes usou incorretamente um módulo de testes como settings; foi corrigida para `manage.py test`, que passou.
+76 testes Django, 54 cenários de navegador, três integrações com API real e dez testes operacionais passaram localmente e no [CI do GitHub](https://github.com/Andressa-Anthero7/Guia-Comercial-Araraquara/actions/runs/35913682031). TypeScript, build e consistência de migrações aprovados. A primeira chamada de testes usou incorretamente um módulo de testes como settings; foi corrigida para `manage.py test`, que passou.
+
+A [PR #2](https://github.com/Andressa-Anthero7/Guia-Comercial-Araraquara/pull/2) foi integrada em `dev` após aprovação dos testes. Monitor habilitado na branch padrão com agenda a cada meia hora; [primeira execução remota manual aprovada](https://github.com/Andressa-Anthero7/Guia-Comercial-Araraquara/actions/runs/35914023025). Isso comprova a execução do monitor, mas ainda não o recebimento de uma notificação de falha pelo responsável nem a primeira execução agendada.
 
 Em produção: 12 verificações públicas em navegador sem erro JavaScript/transbordamento e quatro combinações de autenticação (dois perfis × dois tamanhos). Conferidos 64 arquivos da API e 20 do frontend. Ensaio e instalação preservaram as colunas/dados anteriores de 21 tabelas de negócio e a configuração protegida; integridade SQLite aprovada. A limpeza posterior retirou somente os registros identificados da auditoria.
 
@@ -39,7 +41,7 @@ Evidências: [HTTP/TLS](records/2026-09-23-release/public.json), [navegador púb
 | PostgreSQL | Usuário confirmou que ainda não existe instância. Criar banco/acesso; ensaiar transferência, comparar dados e planejar troca com backup. SQLite permanece ativo. |
 | Certificados e DEBUG | HTTPS funciona agora. Confirmar com Cloudez persistência das configurações e renovação dos certificados por aliases. |
 | Backup externo recorrente | Definir destino, retenção e responsável. A cópia no computador é manual. |
-| Monitoramento | Workflow verifica HTTPS, disponibilidade e DEBUG nas duas origens. Na inspeção inicial, ainda não existia na branch padrão `dev`; publicação no GitHub e primeira execução serão registradas abaixo. Recebimento de notificações pelo responsável ainda requer homologação. |
+| Monitoramento | Workflow publicado e habilitado em `dev`, primeira execução manual remota aprovada. Conferir primeira execução agendada e recebimento das notificações pelo responsável. |
 | Android e push | APK debug 2.3.1 existente; falta aparelho para instalação/recebimento reais. Não é release de loja. |
 | Google/Meta | Inicialização e isolamento testados; faltam contas/destinos para comprovar recebimento real. |
 | Conteúdo e aceite | Cupons, eventos e telefones úteis continuam sem conteúdo real; confirmar contato comercial, responsáveis e aceite. Duplicidades de anunciantes preservadas, sem fusão automática. |
