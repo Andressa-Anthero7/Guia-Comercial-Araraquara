@@ -1,0 +1,30 @@
+{
+  "mode": "smtp",
+  "accepted_messages": 16,
+  "queued_event_types": {
+    "invoice_reminder": 3,
+    "invoice_cancelled": 1,
+    "invoice_paid": 1,
+    "invoice_overdue": 1,
+    "invoice_open": 1,
+    "business_inactive": 1,
+    "business_suspended": 1,
+    "business_active": 1,
+    "business_pending": 1,
+    "email_changed": 2,
+    "password_changed": 1,
+    "welcome": 1
+  },
+  "password_recovery": "sent; token accepted once",
+  "welcome_deduplicated": true,
+  "reminders_deduplicated": true,
+  "production_database_touched": false,
+  "inbox_delivery": "recipient confirmed arrival in inbox",
+  "checked_at": "2026-09-23T20:52:35.681223+00:00",
+  "smtp_host": "ip-45-79-2-160.cloudezapp.io",
+  "port": 587,
+  "transport": "STARTTLS; certificate verification enabled",
+  "production_events_enabled": false,
+  "production_delivery_enabled": false,
+  "production_queue_count": 0
+}

@@ -37,7 +37,7 @@ Evidências: [HTTP/TLS](records/2026-09-23-release/public.json), [navegador púb
 
 | Item | Próxima ação necessária |
 | --- | --- |
-| SMTP | Usuário confirmou que ainda não foi criado. Provisionar serviço, remetente e autenticação de domínio; configurar por canal seguro; validar recebimento e recuperação antes de habilitar worker/eventos. |
+| SMTP | Configurado após este fechamento; 16 mensagens de teste aceitas pelo servidor, com recebimento na caixa de entrada confirmado pelo responsável. [Evidência](records/2026-09-23-release/smtp.json). Eventos/worker seguem desativados; falta ativação e recuperação ponta a ponta em conta controlada de produção. |
 | PostgreSQL | Usuário confirmou que ainda não existe instância. Criar banco/acesso; ensaiar transferência, comparar dados e planejar troca com backup. SQLite permanece ativo. |
 | Certificados e DEBUG | HTTPS funciona agora. Confirmar com Cloudez persistência das configurações e renovação dos certificados por aliases. |
 | Backup externo recorrente | Definir destino, retenção e responsável. A cópia no computador é manual. |

@@ -1,6 +1,6 @@
 # E-mails transacionais do Guia
 
-> **23/09 — atualização:** módulo publicado na 2.3.2, migração 0018 aplicada e configurações preparadas. SMTP ainda não provisionado; captura e envio desativados, sem worker agendado. Consulte [fechamento](CONCLUSAO-2026-09-23.md).
+> **23/09 — SMTP validado:** configuração Cloudez instalada com autenticação e STARTTLS na porta 587 de `ip-45-79-2-160.cloudezapp.io`, com certificado verificado. As 16 mensagens de teste foram aceitas pelo SMTP e o responsável confirmou recebimento na caixa de entrada. Captura e envio automático continuam desativados, sem worker agendado; fila de produção vazia. Consulte [evidência SMTP](records/2026-09-23-release/smtp.json). As descrições de implantação abaixo preservam a preparação inicial.
 
 Remetente escolhido: **nao-responda@guiacomararaquara.com.br**.
 
@@ -64,4 +64,6 @@ Fila persistente, captura na mesma transação do evento, deduplicação de boas
 
 Testes isolados cobrem HTML/texto, escape de conteúdo, recuperação/reutilização de token, boas-vindas sem repetição, avisos de segurança, rollback, configuração desativada, reenvio/limite de tentativas, expiração, reserva de mensagens, transições de publicação e cancelamento de lembretes após pagamento.
 
-Para concluir: obter SMTP e confirmar domínio/remetente, implantar com migração/configuração, testar entrega real (caixa de entrada e spam), links em HTTPS e senha redefinida; só então habilitar eventos/worker e agendar. Não foi enviado e-mail a clientes nesta rodada.
+SMTP configurado e entrega real confirmada em 23/09. `deployment/test_smtp_communications.py` exercitou os eventos reais em banco temporário: boas-vindas, recuperação, alteração de senha, alteração de e-mail para os dois endereços (ambos redirecionados à caixa autorizada), quatro estados do estabelecimento, quatro estados de fatura e três lembretes. Todos os assuntos receberam `[TESTE GCA]`; nenhum cliente real foi alterado ou recebeu mensagens. O token de recuperação foi aceito uma vez e rejeitado na reutilização no banco temporário; o link dessa conta fictícia não funciona no portal público. Boas-vindas e lembretes não duplicaram ao repetir o evento.
+
+A configuração da senha é feita por `deployment/configure_smtp.py`, com entrada oculta, transmissão por SSH e armazenamento privado no servidor, fora do repositório. O hostname SMTP personalizado apresentou certificado incompatível; o hostname do servidor informado pela Cloudez passou na validação TLS. Ainda faltam validação do fluxo completo de recuperação pelo navegador em uma conta controlada de produção, ativação dos eventos/worker e agendamento. Não houve ativação automática para clientes durante estes testes.
