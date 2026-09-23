@@ -1,6 +1,6 @@
 # E-mails transacionais do Guia
 
-> **23/09 ? atualiza??o:** m?dulo publicado na 2.3.2, migra??o 0018 aplicada e configura??es preparadas. SMTP ainda n?o provisionado; captura e envio desativados, sem worker agendado. Consulte [fechamento](CONCLUSAO-2026-09-23.md).
+> **23/09 — atualização:** módulo publicado na 2.3.2, migração 0018 aplicada e configurações preparadas. SMTP ainda não provisionado; captura e envio desativados, sem worker agendado. Consulte [fechamento](CONCLUSAO-2026-09-23.md).
 
 Remetente escolhido: **nao-responda@guiacomararaquara.com.br**.
 

@@ -1,6 +1,6 @@
 # Ponto de retomada — Guia Comercial Araraquara
 
-> **Retomada conclu?da em 23/09:** vers?o 2.3.2 publicada, testes e verifica??es atuais em [fechamento t?cnico](CONCLUSAO-2026-09-23.md). Os registros abaixo s?o hist?ricos.
+> **Retomada concluída em 23/09:** versão 2.3.2 publicada, testes e verificações atuais em [fechamento técnico](CONCLUSAO-2026-09-23.md). Os registros abaixo são históricos.
 
 **23/09/2026 — e-mails transacionais:** preparado módulo com remetente escolhido `nao-responda@guiacomararaquara.com.br`, recuperação HTML/texto, boas-vindas, avisos de segurança/cadastro/publicação/faturas e lembretes financeiros. Fila persistente, novas tentativas, histórico no Django admin e worker. Suíte de 76 testes aprovada. Ainda não implantado, sem SMTP configurado nem envio real; captura e envio automático desativados por padrão. Consulte [operação e escopo dos e-mails](EMAILS-TRANSACIONAIS.md). Preservar mudanças anteriores do frontend compilado. A investigação de SSL posterior à auditoria encontrou indisponibilidade dos certificados personalizados; não usar o sucesso HTTP da implantação como evidência de disponibilidade atual.
 

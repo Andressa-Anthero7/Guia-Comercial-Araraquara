@@ -1,6 +1,6 @@
 # Auditoria de funcionalidades e entrega — 22/09/2026
 
-> **Retomada conclu?da em 23/09:** vers?o 2.3.2 publicada, testes e verifica??es atuais em [fechamento t?cnico](CONCLUSAO-2026-09-23.md). Os registros abaixo s?o hist?ricos.
+> **Retomada concluída em 23/09:** versão 2.3.2 publicada, testes e verificações atuais em [fechamento técnico](CONCLUSAO-2026-09-23.md). Os registros abaixo são históricos.
 
 > **Atualização de 23/09:** domínio principal e os dois subdomínios de clientes passaram na validação HTTPS no frontend `app33`. Consulte a [operação aprovada com aliases individuais](OPERACAO-SUBDOMINIOS-2026-09-23.md); o bloqueio SSL descrito na auditoria abaixo é histórico.
 

@@ -24,5 +24,5 @@ A liberação do benefício no sistema não automatiza as etapas da hospedagem. 
 
 - Discutir com a Cloudez emissão, persistência e renovação de certificado cobrindo o domínio principal e `*.guiacomararaquara.com.br`, além do DNS wildcard. Renovação automática ainda não foi comprovada.
 - Nomes incorretos sem DNS não chegam à aplicação. Mesmo com DNS wildcard, HTTPS exige cobertura válida para exibir o fallback sem aviso de segurança.
-- O fallback já existente foi melhorado localmente para “Empresa não encontrada”, com nome consultado e link para o guia. TypeScript passou; essa alteração não foi publicada nesta sessão.
+- O fallback já existente foi melhorado localmente para “Empresa não encontrada”, com nome consultado e link para o guia. Publicada e validada em desktop/celular na 2.3.2; consulte o [fechamento](CONCLUSAO-2026-09-23.md).
 - A exclusão da aplicação antiga não foi executada pelo agente nem validada como segura. O funcionamento atual não comprova independência dos arquivos de certificado ou da renovação em relação à aplicação antiga.
