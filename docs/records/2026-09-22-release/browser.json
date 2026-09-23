@@ -1,0 +1,85 @@
+{
+  "at": "2026-09-22T19:15:34.338Z",
+  "checks": [
+    {
+      "route": "/",
+      "width": 1440,
+      "status": 200,
+      "visibleText": 4783,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "route": "/anunciante/login",
+      "width": 1440,
+      "status": 200,
+      "visibleText": 208,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "route": "/backoffice",
+      "width": 1440,
+      "status": 200,
+      "visibleText": 114,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "route": "/?subdomain=barbearia-alcantara",
+      "width": 1440,
+      "status": 200,
+      "visibleText": 818,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "route": "/?subdomain=m-espetinhos",
+      "width": 1440,
+      "status": 200,
+      "visibleText": 867,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "route": "/",
+      "width": 390,
+      "status": 200,
+      "visibleText": 4699,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "route": "/anunciante/login",
+      "width": 390,
+      "status": 200,
+      "visibleText": 208,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "route": "/backoffice",
+      "width": 390,
+      "status": 200,
+      "visibleText": 114,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "route": "/?subdomain=barbearia-alcantara",
+      "width": 390,
+      "status": 200,
+      "visibleText": 818,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "route": "/?subdomain=m-espetinhos",
+      "width": 390,
+      "status": 200,
+      "visibleText": 867,
+      "overflow": false,
+      "errors": []
+    }
+  ]
+}

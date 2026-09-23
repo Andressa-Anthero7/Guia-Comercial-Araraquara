@@ -1,0 +1,18 @@
+{
+  "checked_at": "2026-09-23T19:59:16.361455+00:00",
+  "billing_scheduled": true,
+  "billing_runs": [
+    {
+      "at": "2026-09-23T09:15:03.738176+00:00",
+      "result": {
+        "created": 0,
+        "existing": 0,
+        "processed": 0
+      }
+    }
+  ],
+  "temporary_audit_accounts_pending": false,
+  "audit_prefix": null,
+  "email_migration_present": true,
+  "email_worker_present": true
+}

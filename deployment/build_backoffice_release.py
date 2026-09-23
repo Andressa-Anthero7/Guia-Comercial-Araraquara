@@ -1,5 +1,7 @@
 """Package the tested build without credentials, databases or server configuration."""
 import hashlib
+import argparse
+import re
 import json
 import shutil
 import zipfile
@@ -7,14 +9,29 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 version = json.loads((root / "frontend/package.json").read_text())["version"]
+parser = argparse.ArgumentParser()
+parser.add_argument('--revision', default='')
+args = parser.parse_args()
+if args.revision and not re.fullmatch(r'r[1-9][0-9]*', args.revision):
+    parser.error('Use revisão r1, r2, ...')
+suffix = '-' + args.revision if args.revision else ''
 dist = root / "frontend/dist"
 if not (dist / "index.html").is_file():
     raise SystemExit("Execute npm run build no frontend antes de empacotar.")
 output = root / "output/backoffice-v2"
 output.mkdir(parents=True, exist_ok=True)
+archive = output / f"gca-backoffice-{version}{suffix}.zip"
+if archive.exists():
+    raise SystemExit(f"Pacote já existente: {archive}. Use uma nova versão; não sobrescreva uma entrega.")
 files = {}
-for name in ("admin.py", "images.py", "models.py", "management.py", "management_rules.py", "serializers.py", "urls.py", "views.py"):
-    files[f"api/core/{name}"] = root / "backend/core" / name
+for source in (root / "backend/core").glob("*.py"):
+    if not source.name.startswith("test"):
+        files[f"api/core/{source.name}"] = source
+files["api/run_billing.py"] = root / "backend/run_billing.py"
+files["api/run_email.py"] = root / "backend/run_email.py"
+for source in (root / "backend/core/templates").rglob("*"):
+    if source.is_file():
+        files[f"api/core/templates/{source.relative_to(root / 'backend/core/templates').as_posix()}"] = source
 for source in (root / "backend/core/migrations").glob("*.py"):
     files[f"api/core/migrations/{source.name}"] = source
 for source in dist.rglob("*"):
@@ -26,7 +43,7 @@ for source in dist.rglob("*"):
         files[f"api/backoffice_frontend/{relative.as_posix()}"] = source
         files[f"public/{relative.as_posix()}"] = source
 manifest = {"version": version, "migrate_core": True, "files": {name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in files.items()}}
-archive = output / f"gca-backoffice-{version}.zip"
+archive = output / f"gca-backoffice-{version}{suffix}.zip"
 with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as package:
     for name, source in files.items():
         package.write(source, name)

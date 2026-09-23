@@ -17,7 +17,9 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: "npm run dev -- --strictPort",
+    command: process.env.GCA_E2E_PREVIEW === "1"
+      ? `"${process.execPath}" node_modules/vite/bin/vite.js preview --port=3000 --host=0.0.0.0 --strictPort`
+      : "npm run dev -- --strictPort",
     url: "http://127.0.0.1:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 30_000

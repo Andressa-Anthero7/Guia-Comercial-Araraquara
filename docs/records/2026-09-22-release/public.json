@@ -1,0 +1,125 @@
+﻿{
+  "checked_at": "2026-09-22T19:13:33.120574+00:00",
+  "checks": [
+    {
+      "url": "https://guiacomararaquara.com.br/",
+      "status": 200,
+      "content_type": "text/html",
+      "portal_html": true
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/anunciante/login",
+      "status": 200,
+      "content_type": "text/html",
+      "portal_html": true
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/area-do-anunciante",
+      "status": 200,
+      "content_type": "text/html",
+      "portal_html": true
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/backoffice",
+      "status": 200,
+      "content_type": "text/html",
+      "portal_html": true
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/api/health/",
+      "status": 200,
+      "content_type": "application/json",
+      "health": {
+        "status": "ok",
+        "service": "Guia Comercial Araraquara API"
+      }
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/api/categories/",
+      "status": 200,
+      "content_type": "application/json",
+      "count": 8,
+      "subdomains": []
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/api/businesses/",
+      "status": 200,
+      "content_type": "application/json",
+      "count": 7,
+      "subdomains": [
+        "barbearia-alcantara",
+        "m-espetinhos"
+      ]
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/api/reviews/",
+      "status": 200,
+      "content_type": "application/json",
+      "count": 0,
+      "subdomains": []
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/api/coupons/",
+      "status": 200,
+      "content_type": "application/json",
+      "count": 0,
+      "subdomains": []
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/api/events/",
+      "status": 200,
+      "content_type": "application/json",
+      "count": 0,
+      "subdomains": []
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/api/useful-numbers/",
+      "status": 200,
+      "content_type": "application/json",
+      "count": 0,
+      "subdomains": []
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/api/auth/session/",
+      "status": 200,
+      "content_type": "application/json"
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/api/backoffice/businesses/",
+      "status": 403,
+      "debug_page": false
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/api/advertiser/portal/",
+      "status": 401,
+      "debug_page": false
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/api/__gca_audit_missing__/",
+      "status": 404,
+      "debug_page": false
+    },
+    {
+      "url": "https://webapp415078.ip-45-79-2-160.cloudezapp.io/api/health/",
+      "status": 200,
+      "content_type": "application/json",
+      "health": {
+        "status": "ok",
+        "service": "Guia Comercial Araraquara API"
+      }
+    },
+    {
+      "url": "https://webapp415078.ip-45-79-2-160.cloudezapp.io/api/__gca_audit_missing__/",
+      "status": 404,
+      "debug_page": false
+    },
+    {
+      "url": "https://barbearia-alcantara.guiacomararaquara.com.br/",
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'barbearia-alcantara.guiacomararaquara.com.br'. (_ssl.c:1081)>"
+    },
+    {
+      "url": "https://m-espetinhos.guiacomararaquara.com.br/",
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'm-espetinhos.guiacomararaquara.com.br'. (_ssl.c:1081)>"
+    }
+  ]
+}

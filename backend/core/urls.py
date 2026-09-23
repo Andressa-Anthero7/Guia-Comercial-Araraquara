@@ -1,6 +1,7 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from .management import ManagedCategoryViewSet, ManagedTagViewSet, ManagedReviewViewSet, ManagedUserViewSet
+from .account_recovery import request_password_reset, confirm_password_reset
 
 from .views import (
     BackofficeBusinessViewSet,
@@ -58,6 +59,8 @@ router.register("backoffice/advertisements", AdvertisementViewSet, basename="bac
 router.register("backoffice/notifications", BackofficeNotificationViewSet, basename="backoffice-notification")
 
 urlpatterns = [
+    path("auth/password-reset/", request_password_reset, name="password-reset"),
+    path("auth/password-reset/confirm/", confirm_password_reset, name="password-reset-confirm"),
     path("health/", health_check, name="health-check"),
     path("auth/csrf/", csrf_cookie, name="csrf-cookie"),
     path("auth/login/", backoffice_login, name="backoffice-login"),

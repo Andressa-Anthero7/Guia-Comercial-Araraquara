@@ -1,0 +1,33 @@
+{
+  "at": "2026-09-23T19:58:57.385Z",
+  "checks": [
+    {
+      "role": "advertiser",
+      "width": 1440,
+      "status": "passed",
+      "session_reload": true,
+      "logout": true
+    },
+    {
+      "role": "advertiser",
+      "width": 390,
+      "status": "passed",
+      "session_reload": true,
+      "logout": true
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "status": "passed",
+      "session_reload": true,
+      "logout": true
+    },
+    {
+      "role": "admin",
+      "width": 390,
+      "status": "passed",
+      "session_reload": true,
+      "logout": true
+    }
+  ]
+}

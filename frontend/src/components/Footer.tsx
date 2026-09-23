@@ -21,12 +21,12 @@ export function Footer() {
               </span>
             </div>
             <p className="text-xs leading-relaxed text-stone-500">
-              O maior e mais completo portal de comércios, cupons, vagas de emprego e eventos locais de Araraquara SP - A Morada do Sol.
+              Encontre comércios, serviços, cupons e eventos locais de Araraquara SP - A Morada do Sol.
             </p>
             
             {/* Live Weather Indicator of Araraquara */}
             <div className="inline-flex items-center space-x-2 rounded-lg bg-stone-800 px-3 py-1.5 text-xs text-amber-400 font-semibold border border-stone-700">
-              <span>☀️ Araraquara: 28°C • Ensolarado</span>
+              <span>Araraquara • São Paulo</span>
             </div>
           </div>
 

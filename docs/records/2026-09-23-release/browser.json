@@ -1,0 +1,89 @@
+{
+  "at": "2026-09-23T19:59:29.934Z",
+  "checks": [
+    {
+      "url": "https://guiacomararaquara.com.br/",
+      "width": 1440,
+      "status": 200,
+      "overflow": false,
+      "javascript_errors": []
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/anunciante/login",
+      "width": 1440,
+      "status": 200,
+      "overflow": false,
+      "javascript_errors": []
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/backoffice",
+      "width": 1440,
+      "status": 200,
+      "overflow": false,
+      "javascript_errors": []
+    },
+    {
+      "url": "https://barbearia-alcantara.guiacomararaquara.com.br/",
+      "width": 1440,
+      "status": 200,
+      "overflow": false,
+      "javascript_errors": []
+    },
+    {
+      "url": "https://m-espetinhos.guiacomararaquara.com.br/",
+      "width": 1440,
+      "status": 200,
+      "overflow": false,
+      "javascript_errors": []
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/?subdomain=empresa-ausente-verificacao",
+      "width": 1440,
+      "status": 200,
+      "overflow": false,
+      "javascript_errors": []
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/",
+      "width": 390,
+      "status": 200,
+      "overflow": false,
+      "javascript_errors": []
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/anunciante/login",
+      "width": 390,
+      "status": 200,
+      "overflow": false,
+      "javascript_errors": []
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/backoffice",
+      "width": 390,
+      "status": 200,
+      "overflow": false,
+      "javascript_errors": []
+    },
+    {
+      "url": "https://barbearia-alcantara.guiacomararaquara.com.br/",
+      "width": 390,
+      "status": 200,
+      "overflow": false,
+      "javascript_errors": []
+    },
+    {
+      "url": "https://m-espetinhos.guiacomararaquara.com.br/",
+      "width": 390,
+      "status": 200,
+      "overflow": false,
+      "javascript_errors": []
+    },
+    {
+      "url": "https://guiacomararaquara.com.br/?subdomain=empresa-ausente-verificacao",
+      "width": 390,
+      "status": 200,
+      "overflow": false,
+      "javascript_errors": []
+    }
+  ]
+}

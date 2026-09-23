@@ -1,5 +1,24 @@
 from django.contrib import admin
 
+from .models import TransactionalEmail
+
+
+@admin.register(TransactionalEmail)
+class TransactionalEmailAdmin(admin.ModelAdmin):
+    list_display = ('kind', 'recipient', 'status', 'attempts', 'created_at', 'sent_at')
+    list_filter = ('status', 'kind', 'created_at')
+    search_fields = ('recipient', 'event_key')
+    readonly_fields = tuple(field.name for field in TransactionalEmail._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
 from .models import (
     Advertiser,
     AdvertisingPlan,

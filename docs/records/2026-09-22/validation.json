@@ -1,0 +1,30 @@
+{
+  "date": "2026-09-22",
+  "scope": "Local working tree, preserving unpublished backlog; production inspected read-only",
+  "django_check": "passed",
+  "migrations_check": "No changes detected",
+  "typescript_final": "passed",
+  "production_build_final": {"result": "passed", "main_bundle_kb": 299.70, "main_bundle_gzip_kb": 89.73},
+  "git_diff_check": "passed",
+  "django_existing_suite": {"passed": 55},
+  "django_account_recovery_added": {"passed": 5},
+  "deployment_unittests": {"passed": 7},
+  "browser_mock_api": {
+    "distinct_scenarios_passed_after_fixes": 51,
+    "full_run_before_mobile_fix": {"passed": 49, "failed": 1},
+    "targeted_run_after_mobile_fix": {"passed": 2, "description": "Previously failing mobile form plus new clipboard test"},
+    "authentication_regression": "Three previously failing login scenarios passed after placing Suspense boundaries inside App; passed again in full run",
+    "initial_environment_failures": "Vite watcher crashed on generated Android directory; integration worker crashed during initial concurrent run. Repeated after excluding generated directories with one browser worker."
+  },
+  "browser_real_django": {"passed": 3, "database": "disposable temporary SQLite"},
+  "production": {
+    "main_site_and_health": "HTTP 200 with TLS validation",
+    "protected_api_anonymous": {"backoffice": 403, "advertiser": 401},
+    "customer_subdomains": "Both fail TLS hostname verification",
+    "debug_pages": "Publicly exposed on both API origins",
+    "latest_backup": "2026-09-22T06:30:02Z",
+    "backup_integrity": "ok",
+    "remote_mutations": false
+  },
+  "release_decision": "Not approved; see AUDITORIA-ENTREGA-2026-09-22.md"
+}

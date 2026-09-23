@@ -1,7 +1,9 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Check, Clock, Copy, Gift, Globe2, Instagram, Mail, MapPin, MessageSquare, Phone, Send, Star, Store, User, X } from "lucide-react";
 import { useCategories } from "../categories";
 import type { Business, Coupon, Review } from "../types";
+import { request } from "../api";
+import { trackMarketingContact } from "../utils/marketing";
 
 export interface BusinessProfileProps {
   business: Business;
@@ -37,6 +39,24 @@ function displayDate(value: string) {
 }
 
 export function BusinessProfile({ business, reviews, coupons, reviewsUnavailable = false, onSubmitReview, presentation, onClose }: Props) {
+  const trackedBusiness = useRef("");
+  const profileRoot = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const slug = business.slug;
+    if (!slug) return;
+    const track = (event: string) => { void request(`/api/businesses/${encodeURIComponent(slug)}/events/`, { method: "POST", body: JSON.stringify({ event }), keepalive: true }).catch(() => {}); };
+    if (trackedBusiness.current !== slug) { trackedBusiness.current = slug; track("view"); }
+    const root = profileRoot.current;
+    const click = (event: Event) => {
+      const link = event.target instanceof Element ? event.target.closest("a") : null;
+      if (!link || link.getAttribute("aria-label")?.startsWith("Ampliar foto")) return;
+      const href = link.href;
+      const kind = href.includes("wa.me/") ? "whatsapp" : href.startsWith("tel:") ? "phone" : href.startsWith("mailto:") ? "email" : href.includes("google.com/maps") ? "map" : href.includes("instagram.com/") ? "instagram" : /^https?:/.test(href) ? "website" : "";
+      if (kind) { track(kind); if (presentation === "page") trackMarketingContact(business, kind); }
+    };
+    root?.addEventListener("click", click);
+    return () => root?.removeEventListener("click", click);
+  }, [business.slug, business.googleAnalyticsId, business.googleAdsId, business.metaPixelId, presentation]);
   const categories = useCategories();
   const isPage = presentation === "page";
   const prefix = isPage ? "landing" : "modal";
@@ -98,7 +118,7 @@ export function BusinessProfile({ business, reviews, coupons, reviewsUnavailable
   }
 
   return (
-    <>
+    <div ref={profileRoot} className="contents">
       <div className={`relative isolate flex shrink-0 items-end overflow-hidden bg-stone-900 ${isPage ? "min-h-56 sm:min-h-64" : "min-h-56 sm:min-h-72"}`}>
         {business.image ? (
           <img src={business.image} alt={business.name} className="absolute inset-0 -z-20 h-full w-full object-cover" referrerPolicy="no-referrer" fetchPriority="high" />
@@ -205,7 +225,7 @@ export function BusinessProfile({ business, reviews, coupons, reviewsUnavailable
           </form>
         </section>
       </div>
-    </>
+    </div>
   );
 }
 

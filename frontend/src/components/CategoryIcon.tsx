@@ -1,4 +1,11 @@
-import * as LucideIcons from 'lucide-react';
+import { Utensils, ShoppingBag, Briefcase, HeartPulse, Car, GraduationCap, Sparkles,
+  PawPrint, Dumbbell, Home, Store, Wrench, Building2, Coffee, Pizza, Scissors,
+  Stethoscope, Laptop, Hammer, Hotel, Truck, Church, Music, HelpCircle,
+  type LucideIcon } from 'lucide-react';
+
+const icons: Record<string, LucideIcon> = { Utensils, ShoppingBag, Briefcase, HeartPulse,
+  Car, GraduationCap, Sparkles, PawPrint, Dumbbell, Home, Store, Wrench, Building2,
+  Coffee, Pizza, Scissors, Stethoscope, Laptop, Hammer, Hotel, Truck, Church, Music };
 
 interface CategoryIconProps {
   name: string;
@@ -7,10 +14,10 @@ interface CategoryIconProps {
 }
 
 export function CategoryIcon({ name, className = "", size = 24 }: CategoryIconProps) {
-  const IconComponent = (LucideIcons as any)[name];
+  const IconComponent = icons[name];
   if (!IconComponent) {
     // Fallback icon
-    return <LucideIcons.HelpCircle className={className} size={size} />;
+    return <HelpCircle className={className} size={size} />;
   }
   return <IconComponent className={className} size={size} />;
 }
